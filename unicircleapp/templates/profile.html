@@ -1,0 +1,537 @@
+{% extends 'homepage_base.html' %}
+{% load static %}
+
+{% block title %}{{ search_user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --accent: orangered;
+    --bg: #fff8f5;
+    --card: #fff;
+    --muted: #6b6b6b;
+    --radius: 14px;
+    --shadow: 0 6px 20px rgba(0,0,0,0.06);
+    font-family: Inter, system-ui, sans-serif;
+  }
+  .wrapper {max-width: 1100px; width: 100%; margin: 20px;}
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .profile-header {display:flex; align-items:center; gap:20px; margin-bottom:20px;}
+  .profile-header img {
+    width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--accent);
+  }
+  .profile-header h2 {margin:0; font-size:24px; color:var(--accent);}
+  .note {font-size:14px; color:var(--muted);}
+  .info-grid {display:grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); gap:12px;}
+  .info-box {background:#fafafa; padding:14px; border-radius:10px; border:1px solid #eee;}
+  .info-box strong {display:block; color:#333; font-size:14px;}
+  .info-box span {font-size:13px; color:var(--muted);}
+  @media(max-width:600px){.profile-header{flex-direction:column;align-items:flex-start;}}
+  
+  /* Modal */
+  .modal-backdrop {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;z-index:1050;}
+  .modal-content {background:white;padding:20px;border-radius:var(--radius);max-width:700px;width:100%;max-height:90vh;overflow-y:auto;}
+  </style>
+
+<div class="wrapper">
+  <div class="card">
+    <div class="profile-header">
+      
+      <img data-bs-toggle="modal" data-bs-target="#profileModal" type="button" src="{{ profile_picture }}" alt="Profile Picture">
+      
+      <div>
+        <h2>{{ search_user.username }}</h2>
+        <p class="note">{{ search_profile.bio|default:"No bio provided." }}</p>
+        {% if search_profile.linkedin %}
+        <a href="{{ search_profile.linkedin }}" target="_blank" class="btn btn-sm btn-outline-dark">
+          <i class="fa-brands fa-linkedin"></i> LinkedIn
+        </a>
+        
+        {% endif %}
+        {% if user == search_user %}
+          <a id="editProfileBtn" class="btn btn-sm btn-primary ms-2"
+          href="{% url 'unicircleapp:user_edit_profile_page' %}"
+          >
+             Edit Profile
+          </a>
+         
+
+        {% endif %}
+
+         {% if user != search_user and follow_allowed %}
+            <button id="followBtn" 
+                    data-username="{{ search_user.username }}"
+                    class="btn btn-outline-orangered">
+              {% if follow_status == 'pending' %}
+                Pending
+              {% elif follow_status == 'accepted' %}
+                Following
+              {% else %}
+                Follow
+              {% endif %}
+            </button>
+            <script>
+const followBtn = document.getElementById('followBtn');
+if(followBtn){
+  followBtn.addEventListener('click', () => {
+    const username = followBtn.dataset.username;
+    fetch("{% url 'unicircleapp:send_follow_request' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `to=${username}`
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.message) {
+        followBtn.innerText = "Pending";
+        followBtn.disabled = true;
+      }
+      if(data.error) alert(data.error);
+    });
+  });
+}
+</script>
+
+
+          {% endif %}
+      </div>
+    </div>
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-l " style="max-height: 30vh;">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalCenterTitle">Profile Picture</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img src="{{ profile_picture }}" class="img-fluid rounded" alt="Profile Picture">
+              </div>
+            </div>
+          </div>
+        </div>
+{% if user.user_type != 'student' and user.username == search_user.username %}
+<!-- Followers/Following Modal Trigger -->
+<div class="my-3">
+  <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#followersModal">
+    View Followers
+  </button>
+{% if user.user_type != 'faculty' %}
+  <button class="btn btn-outline-secondary" red data-bs-toggle="modal" data-bs-target="#followingModal">
+    View Following
+  </button>
+{% endif %}
+</div>
+
+<!-- Followers Modal -->
+<div class="modal fade" id="followersModal" tabindex="-1" aria-labelledby="followersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="followersModalLabel">Followers</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="followersList">
+        <!-- followers list populated by AJAX -->
+        <div class="text-center text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Following Modal -->
+<div class="modal fade" id="followingModal" tabindex="-1" aria-labelledby="followingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="followingModalLabel">Following</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="followingList">
+        <!-- following list populated by AJAX -->
+        <div class="text-center text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PROFILE PICTURE MODAL -->
+
+<!-- Button trigger modal -->
+
+
+<!-- Modal -->
+
+
+
+
+<script>
+(function($){
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const c = cookies[i].trim();
+        if (c.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  function fetchFollowers() {
+    $.get("{% url 'unicircleapp:my_followers' %}", function(data){
+      if(data.followers.length === 0){
+        $('#followersList').html('<p class="text-muted text-center">No followers yet.</p>');
+      } else {
+        let html = '<ul class="list-group">';
+        data.followers.forEach(f => {
+          html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                     ${f.username} (${f.full_name})
+                     <button class="btn btn-sm btn-danger remove-follower" data-username="${f.username}">Remove</button>
+                   </li>`;
+        });
+        html += '</ul>';
+        $('#followersList').html(html);
+      }
+    });
+  }
+
+  function fetchFollowing() {
+    $.get("{% url 'unicircleapp:my_following' %}", function(data){
+      if(data.following.length === 0){
+        $('#followingList').html('<p class="text-muted text-center">Not following anyone.</p>');
+      } else {
+        let html = '<ul class="list-group">';
+        data.following.forEach(f => {
+          html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                     ${f.username} (${f.full_name})
+                     <button class="btn btn-sm btn-danger unfollow" data-username="${f.username}">Unfollow</button>
+                   </li>`;
+        });
+        html += '</ul>';
+        $('#followingList').html(html);
+      }
+    });
+  }
+
+  // open modal event
+  $('#followersModal').on('show.bs.modal', fetchFollowers);
+  $('#followingModal').on('show.bs.modal', fetchFollowing);
+
+  // remove follower
+  $(document).on('click', '.remove-follower', function(){
+    const username = $(this).data('username');
+    const btn = $(this);
+    $.ajax({
+      url: "{% url 'unicircleapp:remove_follower' %}",
+      method: 'POST',
+      data: { username },
+      headers: { 'X-CSRFToken': csrftoken },
+      success: function(){
+        btn.closest('li').remove();
+      }
+    });
+  });
+
+  // unfollow
+  $(document).on('click', '.unfollow', function(){
+    const username = $(this).data('username');
+    const btn = $(this);
+    $.ajax({
+      url: "{% url 'unicircleapp:unfollow_user' %}",
+      method: 'POST',
+      data: { username },
+      headers: { 'X-CSRFToken': csrftoken },
+      success: function(){
+        btn.closest('li').remove();
+      }
+    });
+  });
+
+})(jQuery);
+</script>
+
+{% endif %}
+
+
+
+    <!-- STUDENT SECTION -->
+    {% if search_user.user_type == "student" %}
+    <h3>Student Details</h3>
+    <div class="info-grid">
+      <div class="info-box"><strong>Department</strong><span>{{ search_profile.department }}</span></div>
+      <div class="info-box"><strong>Year</strong><span>{{ search_profile.year }}</span></div>
+      <div class="info-box"><strong>Enrollment Number</strong><span>{{ search_profile.enrollment_number }}</span></div>
+      <div class="info-box"><strong>Branch</strong><span>{{ search_profile.branch }}</span></div>
+      <div class="info-box"><strong>Semester</strong><span>{{ search_profile.semester }}</span></div>
+      <div class="info-box"><strong>Section</strong><span>{{ search_profile.section }}</span></div>
+      <div class="info-box"><strong>CGPA</strong><span>{{ search_profile.cgpa }}</span></div>
+      <div class="info-box row-span"><strong>Skills</strong><span>{{ search_profile.skills }}</span></div>
+    </div>
+    {% endif %}
+
+    <!-- ALUMNI SECTION -->
+    {% if search_user.user_type == "alumni" %}
+    <h3>Alumni Details</h3>
+    <div class="info-grid">
+      <div class="info-box"><strong>Department</strong><span>{{ search_profile.department }}</span></div>
+      <div class="info-box"><strong>Year</strong><span>{{ search_profile.year }}</span></div>
+      <div class="info-box"><strong>Graduation Year</strong><span>{{ search_profile.graduation_year }}</span></div>
+      <div class="info-box"><strong>Higher Studies</strong><span>{{ search_profile.higher_studies }}</span></div>
+      <div class="info-box"><strong>Current Position</strong><span>{{ search_profile.current_position }}</span></div>
+      <div class="info-box"><strong>Company</strong><span>{{ search_profile.company }}</span></div>
+      <div class="info-box"><strong>Industry</strong><span>{{ search_profile.industry }}</span></div>
+      <div class="info-box row-span"><strong>Achievements</strong><span>{{ search_profile.achievements }}</span></div>
+      <div class="info-box"><strong>Mentoring Interest</strong><span>{{ search_profile.mentoring_interest }}</span></div>
+    </div>
+    {% endif %}
+
+    <!-- FACULTY SECTION -->
+    {% if search_user.user_type == "faculty" %}
+    <h3>Faculty Details</h3>
+    <div class="info-grid">
+      <div class="info-box"><strong>Department</strong><span>{{ search_profile.department }}</span></div>
+      <div class="info-box"><strong>Designation</strong><span>{{ search_profile.designation }}</span></div>
+      <div class="info-box"><strong>Years of Experience</strong><span>{{ search_profile.years_of_experience }}</span></div>
+      <div class="info-box"><strong>Specialization</strong><span>{{ search_profile.specialization }}</span></div>
+      <div class="info-box row-span"><strong>Classes Taught</strong><span>{{ search_profile.classes_taught }}</span></div>
+      <div class="info-box row-span"><strong>Publications</strong><span>{{ search_profile.publications }}</span></div>
+      <div class="info-box row-span"><strong>Research Interests</strong><span>{{ search_profile.research_interests }}</span></div>
+      <div class="info-box"><strong>Office Hours</strong><span>{{ search_profile.office_hours }}</span></div>
+    </div>
+    {% endif %}
+  </div>
+<div class="container my-5">
+        <h2 class="mb-4 text-orangered">Posts</h2>
+        <div class="posts-area">
+          {% for post in posts %}
+          <div class="post-main" data-post-id="{{ post.id }}">
+            <div class="post-header">
+              <div class="profile">
+                <img src="{% if post.author.profile.profile_picture and post.author.profile.profile_picture.name %}
+                  {{ post.author.profile.profile_picture.url }}
+                {% else %}
+                  {% static 'images/default_avatar.jpg' %}
+                {% endif %}" alt="Profile Picture" />
+                <div class="user-details">
+                  <div class="user-name">{{ post.author.username }}</div>
+                  <div class="user-type">{{ post.author.user_type }}</div>
+                  <p class="post-date">{{ post.created_at|timesince }} ago</p>
+                </div>
+              </div>
+              <div class="options">
+                {% if user.is_approved and post.author == user and user.user_type != 'student' %}
+                  <form action="{% url 'post:delete_post' post.id %}" method="post" class="delete-post-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+            <div class="post-body">
+
+              <div class="post-title">{{ post.title }}</div>
+              <!-- <div class="post-description">{{ post.content }}</div> -->
+               <div class="post-description"
+     data-full="{{ post.content|escape }}">
+  {{ post.content|truncatewords:100 }}
+</div>
+
+            </div>
+
+            {% if post.image %}
+            <div class="post-image-container">
+              <img class="post-image" src="{{ post.image.url }}" alt="Post Image" />
+            </div>
+            {% endif %}
+
+            <!-- Interaction section -->
+            <div class="post-interaction">
+              {% if user.is_approved %}
+                <!-- Like Button -->
+                <form action="{% url 'post:like_post' post.id %}" method="post" class="like-form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-like">
+                    {% if post.liked_by_user %}
+                      <i class="fa-solid fa-heart"></i> Unlike ({{ post.likes.count }}) 
+                    {% else %}
+                      <i class="fa-regular fa-heart"></i> Like ({{ post.likes.count }}) 
+                    {% endif %}
+                  </button>
+                </form>
+              {% else %}
+                <!-- Disabled Like -->
+                <button type="button" class="btn btn-like" disabled>
+                  <i class="fa-regular fa-heart"></i> Like ({{ post.likes.count }})
+                </button>
+              {% endif %}
+
+              <!-- Comments Section -->
+              <h5 class="mt-3">Comments</h5>
+              <div class="comments-list">
+                {% for comment in post.comments.all %}
+                <div class="comment-item" data-comment-id="{{ comment.id }}">
+                  <b>{{ comment.author.username }}</b> {{ comment.content }}
+                  {% if user.is_approved and comment.author == user %}
+                    <form action="{% url 'post:delete_comment' comment.id %}" method="post"
+                      class="delete-comment-form d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-link text-danger btn-sm" style="color: white;">
+                        Delete
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted">No comments yet.</p>
+                {% endfor %}
+              </div>
+
+              {% if user.is_approved %}
+                <!-- Add Comment -->
+                <form action="{% url 'post:comment_post' post.id %}" method="post" class="comment-form mt-2">
+                  {% csrf_token %} {{ comment_form.as_p }}
+                  <button type="submit" class="btn btn-outline-orangered btn-sm">
+                    Comment
+                  </button>
+                </form>
+              {% else %}
+                <p class="text-muted mt-2">You must be approved to comment.</p>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted">No posts yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+</div>
+
+<script>
+  const DEFAULT_AVATAR = "{% static 'images/default_avatar.jpg' %}";
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const csrftoken = getCookie("csrftoken");
+
+  document.addEventListener("DOMContentLoaded", function () {
+
+
+    // --- GLOBAL FORM HANDLER (delegation for dynamically added posts) ---
+    document.body.addEventListener("submit", function (e) {
+      const form = e.target;
+
+      // LIKE
+      if (form.matches(".like-form")) {
+        e.preventDefault();
+        const btn = form.querySelector(".btn-like");
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            btn.innerHTML = data.liked
+              ? `<i class="fa-solid fa-heart"></i> Unlike (${data.likes})`
+              : `<i class="fa-regular fa-heart"></i> Like (${data.likes})`;
+          });
+      }
+
+      // COMMENT
+      if (form.matches(".comment-form")) {
+        e.preventDefault();
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new FormData(form),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.errors) {
+              alert("Error: " + JSON.stringify(data.errors));
+              return;
+            }
+            const list = form.previousElementSibling;
+            if (list.querySelector("p.text-muted")) list.innerHTML = "";
+            const div = document.createElement("div");
+            div.classList.add("comment-item");
+            div.setAttribute("data-comment-id", data.id);
+            div.innerHTML = `<b>${data.author}</b> ${data.content}
+              <form action="${data.delete_comment_url}" method="post" class="delete-comment-form d-inline">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrftoken}">
+                <button type="submit" class="btn btn-link text-danger btn-sm">Delete</button>
+              </form>`;
+            list.appendChild(div);
+            form.reset();
+          });
+      }
+
+      // DELETE POST
+      if (form.matches(".delete-post-form")) {
+        e.preventDefault();
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.deleted) form.closest(".post-main").remove();
+          });
+      }
+
+      // DELETE COMMENT
+      if (form.matches(".delete-comment-form")) {
+        e.preventDefault();
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.deleted) form.closest(".comment-item").remove();
+          });
+      }
+    });
+  });
+</script>
+
+{% endblock %}

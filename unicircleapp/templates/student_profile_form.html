@@ -1,0 +1,14 @@
+<form method="post" enctype="multipart/form-data" action=" {% url 'unicircleapp:studentProfileCreationpage' %} ">
+    {% csrf_token %}
+    <input type="file" name="profile_picture"><br>
+    <input type="text" name="bio" placeholder="Bio" value="{{ profile.bio }}"><br>
+    <input type="text" name="course" placeholder="Course" value="{{ profile.course }}"><br>
+    <input type="text" name="year" placeholder="Year" value="{{ profile.year }}"><br>
+    <input type="text" name="enrollment_number" placeholder="Enrollment #" value="{{ profile.enrollment_number }}"><br>
+    <input type="text" name="branch" placeholder="Branch" value="{{ profile.branch }}"><br>
+    <input type="text" name="semester" placeholder="Semester" value="{{ profile.semester }}"><br>
+    <input type="text" name="section" placeholder="Section" value="{{ profile.section }}"><br>
+    <input type="number" name="cgpa" step="0.01" placeholder="CGPA" value="{{ profile.cgpa }}"><br>
+    <textarea name="skills" placeholder="Skills">{{ profile.skills }}</textarea><br>
+    <button type="submit">Save</button>
+</form>

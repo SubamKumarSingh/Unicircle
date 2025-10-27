@@ -1,0 +1,212 @@
+/******************** navbar ********************/
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'DM Sans', sans-serif;
+}
+
+#nav_bar{
+    background-color: white;
+    box-shadow: 0px 2px 10px 4px rgba(0,0,0,0.1);
+}
+
+#navbarNav li{
+    margin: 0 2px;
+    width: 110px;
+    transition: all .5s ease;
+}
+
+
+#navbarNav li:hover{
+    border-radius: 10px;
+    background-color: red;
+}
+
+#navbarNav li a{
+    color: black;
+    transition: all .5s ease;
+}
+
+#navbarNav li a:hover{
+    color: white;
+    font-weight: bold;
+}
+
+#navbarNav .active{
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+#nav_img{
+    position: relative;
+    animation-name: nav_img;
+    animation-duration: 2s;
+    animation-timing-function: ease;
+}
+
+#nav_a1{
+    position: relative;
+    animation-name: nav_a1;
+    animation-duration: 2s;
+    animation-timing-function: ease;
+}
+
+#nav_a2{
+    position: relative;
+    animation-name: nav_a2;
+    animation-duration: 2.5s;
+    animation-timing-function: ease;
+}
+
+#nav_a3{
+    position: relative;
+    animation-name: nav_a3;
+    animation-duration: 3s;
+    animation-timing-function: ease;
+}
+
+#nav_a4{
+    position: relative;
+    animation-name: nav_a4;
+    animation-duration: 3.5s;
+    animation-timing-function: ease;
+}
+
+#nav_a5{
+    position: relative;
+    animation-name: nav_a5;
+    animation-duration: 4s;
+    animation-timing-function: ease;
+}
+
+/* @keyframes nav_img {
+    0%{
+        left: -100px;
+        transform: rotate(180deg);
+    }
+
+    100%{
+        left: 0;
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes nav_a1 {
+    0%{
+        top: -150px;
+    }
+
+    100%{
+        top: 0;
+    }
+}
+
+@keyframes nav_a2 {
+    0%{
+        top: -150px;
+    }
+
+    100%{
+        top: 0;
+    }
+}
+
+@keyframes nav_a3 {
+    0%{
+        top: -150px;
+    }
+
+    100%{
+        top: 0;
+    }
+}
+
+@keyframes nav_a4 {
+    0%{
+        top: -150px;
+    }
+
+    100%{
+        top: 0;
+    }
+}
+
+@keyframes nav_a5 {
+    0%{
+        top: -150px;
+    }
+
+    100%{
+        top: 0;
+    }
+} */
+
+
+/* ================= SEARCH BAR ================= */
+#nav_search {
+    width: auto !important;        /* don’t lock it to 110px */
+    margin: 0 10px !important;     /* give it breathing room */
+    flex-grow: 1;                  /* allow it to expand */
+}
+
+#nav_search form {
+    width: 100%;                   /* form stretches fully */
+    display: flex;
+    align-items: center;
+}
+
+#nav_search input {
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    padding: 5px 15px;
+    width: 250px;                  /* default width */
+    transition: all 0.3s ease;
+}
+
+#nav_search input:focus {
+    outline: none;
+    border-color: red;
+    width: 300px;                  /* expand slightly on focus */
+    box-shadow: 0 0 5px rgba(255,0,0,0.5);
+}
+
+#nav_search button {
+    border-radius: 20px;
+    padding: 5px 15px;
+    margin-left: 8px;
+    background-color: red;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+#nav_search button:hover {
+    background-color: darkred;
+    font-weight: bold;
+}
+
+#searchSuggestions {
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+}
+
+#searchSuggestions a {
+    padding: 8px 12px;
+    text-decoration: none;
+    color: black;
+}
+
+#searchSuggestions a:hover {
+    background-color: red;
+    color: white;
+}
+
+#searchSuggestions img {
+    border: 1px solid #eee;
+}
+

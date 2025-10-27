@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Profile Creation</title>
+   <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+  <style>
+    :root{
+      --accent: orangered;
+      --bg: #fff8f5;
+      --card: #fff; 
+      --muted: #6b6b6b;
+      --radius: 14px;
+      --shadow: 0 6px 20px rgba(0,0,0,0.06);
+      font-family: Inter, system-ui, sans-serif;
+    }
+    body{margin:0;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:36px 18px;color:#222;}
+    .wrapper{max-width:1100px;width:100%;}
+    h1{margin:0;font-size:24px;color:var(--accent)}
+    .note{margin:8px 0 20px;font-size:14px;color:var(--muted)}
+    .card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:grid;grid-template-columns:300px 1fr;gap:18px;}
+    .menu{padding:14px;border-radius:12px;}
+    .tabs{display:flex;flex-direction:column;gap:10px}
+    .tab{padding:10px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:all .18s ease;}
+    .tab.active{background:var(--accent);color:white;}
+    form{display:none;}
+    form.active{display:block}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    label{font-size:13px;color:#333}
+    input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e7e7e7;background:#fbfbfb;font-size:14px;}
+    .row-span{grid-column:1/-1}
+    .actions{margin-top:12px}
+    button{padding:10px 14px;border:none;border-radius:10px;cursor:pointer}
+    .primary{background:var(--accent);color:white;font-weight:600}
+    .ghost{background:transparent;border:1px solid #eee}
+    @media (max-width:880px){.card{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Edit Profile</h1>
+    <p class="note">Note that some details may be unchangable.</p>
+    <div class="card">
+      <aside class="menu">
+        <div class="tabs">
+          <button class="tab active" data-target="student">Student</button>
+          <button class="tab" data-target="alumni">Alumni</button>
+          <button class="tab" data-target="faculty">Faculty</button>
+        </div>
+      </aside>
+      <main class="form-area">
+
+  {% if user.user_type == "student" %}
+  <!-- STUDENT FORM -->
+  <form id="student" method="POST" enctype="multipart/form-data" action="{% url 'unicircleapp:user_edit_profile_page' %}" class="active">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="student">
+    <div class="form-grid">
+      <div><label>Username</label><input type="text" name="username" value="{{ user.username }}" disabled></div>
+      <div><label>Email</label><input type="email" name="email" value="{{ user.email }}" disabled></div>
+
+      <label>Profile picture</label>
+      <input type="file" accept="image/*" name="profile_picture">
+      {% if profile.profile_picture %}
+        <img src="{{ profile.profile_picture.url }}" alt="Profile Pic" style="max-width:120px;margin-top:6px;">
+      {% endif %}
+
+      <div class="row-span"><label>Bio</label><textarea name="bio">{{ profile.bio }}</textarea></div>
+      <div class="row-span"><label>LinkedIn</label><input type="url" name="linkedin" value="{{ profile.linkedin }}"></div>
+
+      <div><label>Department</label><input type="text" name="department" value="{{ profile.department }}"></div>
+      <div><label>Year</label><input type="text" name="year" value="{{ profile.year }}"></div>
+      <div><label>Enrollment number *</label><input type="text" name="enrollment_number" value="{{ profile.enrollment_number }}" required></div>
+      <div><label>Branch</label><input type="text" name="branch" value="{{ profile.branch }}"></div>
+      <div><label>Semester</label><input type="text" name="semester" value="{{ profile.semester }}"></div>
+      <div><label>Section</label><input type="text" name="section" value="{{ profile.section }}"></div>
+      <div><label>CGPA</label><input type="number" step="0.01" name="cgpa" value="{{ profile.cgpa }}"></div>
+      <div class="row-span"><label>Skills</label><textarea name="skills">{{ profile.skills }}</textarea></div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="primary">Save Student Profile</button>
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#unsavedChangesModal">
+        Go Back
+      </button>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if user.user_type == "alumni" %}
+  <!-- ALUMNI FORM -->
+  <form id="alumni" method="POST" enctype="multipart/form-data" action="{% url 'unicircleapp:user_edit_profile_page' %}" class="active">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="alumni">
+    <div class="form-grid">
+      <div><label>Username</label><input type="text" name="username" value="{{ user.username }}" disabled></div>
+      <div><label>Email</label><input type="email" name="email" value="{{ user.email }}" disabled></div>
+
+      <label>Profile picture</label>
+      <input type="file" accept="image/*" name="profile_picture">
+      {% if profile.profile_picture %}
+        <img src="{{ profile.profile_picture.url }}" alt="Profile Pic" style="max-width:120px;margin-top:6px;">
+      {% endif %}
+
+      <div class="row-span"><label>Bio</label><textarea name="bio">{{ profile.bio }}</textarea></div>
+      <div class="row-span"><label>LinkedIn</label><input type="url" name="linkedin" value="{{ profile.linkedin }}"></div>
+
+      <div><label>Department</label><input type="text" name="department" value="{{ profile.department }}"></div>
+      <div><label>Year</label><input type="text" name="year" value="{{ profile.year }}"></div>
+      <div><label>Graduation year</label><input type="number" name="graduation_year" value="{{ profile.graduation_year }}"></div>
+      <div><label>Higher studies</label><input type="text" name="higher_studies" value="{{ profile.higher_studies }}"></div>
+      <div><label>Current position</label><input type="text" name="current_position" value="{{ profile.current_position }}"></div>
+      <div><label>Company</label><input type="text" name="company" value="{{ profile.company }}"></div>
+      <div><label>Industry</label><input type="text" name="industry" value="{{ profile.industry }}"></div>
+      <div class="row-span"><label>Achievements</label><textarea name="achievements">{{ profile.achievements }}</textarea></div>
+      <div><label>Mentoring interest</label>
+        <select name="mentoring_interest">
+          <option value="false" {% if profile.mentoring_interest == False %}selected{% endif %}>No</option>
+          <option value="true" {% if profile.mentoring_interest == True %}selected{% endif %}>Yes</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="primary">Save Alumni Profile</button>
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#unsavedChangesModal">
+        Go Back
+      </button>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if user.user_type == "faculty" %}
+  <!-- FACULTY FORM -->
+  <form id="faculty" method="POST" enctype="multipart/form-data" action="{% url 'unicircleapp:user_edit_profile_page' %}" class="active">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="faculty">
+    <div class="form-grid">
+      <div><label>Username</label><input type="text" name="username" value="{{ user.username }}" disabled></div>
+      <div><label>Email</label><input type="email" name="email" value="{{ user.email }}" disabled></div>
+
+      <label>Profile picture</label>
+      <input type="file" accept="image/*" name="profile_picture">
+      {% if profile.profile_picture %}
+        <img src="{{ profile.profile_picture.url }}" alt="Profile Pic" style="max-width:120px;margin-top:6px;">
+      {% endif %}
+
+      <div class="row-span"><label>Bio</label><textarea name="bio">{{ profile.bio }}</textarea></div>
+      <div class="row-span"><label>LinkedIn</label><input type="url" name="linkedin" value="{{ profile.linkedin }}"></div>
+
+      <div><label>Department</label><input type="text" name="department" value="{{ profile.department }}"></div>
+      <div><label>Designation</label><input type="text" name="designation" value="{{ profile.designation }}"></div>
+      <div><label>Years of experience</label><input type="number" name="years_of_experience" value="{{ profile.years_of_experience }}"></div>
+      <div><label>Specialization</label><input type="text" name="specialization" value="{{ profile.specialization }}"></div>
+      <div class="row-span"><label>Classes taught</label><textarea name="classes_taught">{{ profile.classes_taught }}</textarea></div>
+      <div class="row-span"><label>Publications</label><textarea name="publications">{{ profile.publications }}</textarea></div>
+      <div class="row-span"><label>Research interests</label><textarea name="research_interests">{{ profile.research_interests }}</textarea></div>
+      <div><label>Office hours</label><input type="text" name="office_hours" value="{{ profile.office_hours }}"></div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="primary">Save Faculty Profile</button>
+      <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#unsavedChangesModal">
+        Go Back
+      </button>
+    </div>
+  </form>
+
+
+
+
+  {% endif %}
+
+</main>
+
+<!-- Modal -->
+<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-light" style="background:rgb(184, 153, 96); border-radius:14px;">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="unsavedChangesModalLabel" > Unsaved Changes</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Going back will <strong>discard any unsaved changes</strong>. Are you sure you want to leave?
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <a type="button" class="btn btn-danger" href = "{% url 'unicircleapp:user_view_profile_page' user.username %}">Go Back</a>
+      </div>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const userType = "{{ user.user_type }}"; // 'student' / 'alumni' / 'faculty'
+
+  // Show only relevant form
+  document.querySelectorAll('form').forEach(f => f.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+  if(userType){
+    const form = document.getElementById(userType);
+    if(form) form.classList.add('active');
+
+    const tab = document.querySelector(`.tab[data-target="${userType}"]`);
+    if(tab) tab.classList.add('active');
+  }
+
+  // Allow switching tabs if you want
+//   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', e => {
+//     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+//     t.classList.add('active');
+//     const target = t.dataset.target;
+//     document.querySelectorAll('form').forEach(f => f.classList.remove('active'));
+//     document.getElementById(target).classList.add('active');
+//   }));
+});
+</script>
+   <!-- bootstrap script -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+      crossorigin="anonymous"
+    ></script>
+</body>
+</html>

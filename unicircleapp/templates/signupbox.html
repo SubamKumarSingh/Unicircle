@@ -1,0 +1,49 @@
+<div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0 shadow-none">
+      <div class="login-box">
+        <p>Sign Up</p>
+        <form class="form-animation" name="signup_form" id="signup_form" action="{% url 'unicircleapp:landingpage' %}" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="name" value="signup_form">
+
+          <div class="user-box">
+            <input required type="text" name="username">
+            <label>Username</label>
+          </div>
+          <div class="user-box">
+            <input required type="password" name="password">
+            <label>Password</label>
+          </div>
+          <div class="user-box">
+            <input required type="password" name="confirm_password">
+            <label>Confirm Password</label>
+          </div>
+             {% if signup_form.errors %}
+            <div class="alert alert-danger">
+              {{ signup_form.errors.as_ul }}
+            </div>
+          {% endif %}
+          <!-- Custom Signup Button -->
+          <div aria-label="User Signup Button" tabindex="0" id="sign_up_button" role="button" class="user-profile">
+            <div class="user-profile-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.33 0-8 2.17-8 5v1h16v-1c0-2.83-3.67-5-8-5z"/>
+              </svg>
+              <p>Sign Up</p>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  $("#sign_up_button").click(function(event){
+      event.preventDefault();
+      $('#signup_form').submit();
+  });
+});
+</script>

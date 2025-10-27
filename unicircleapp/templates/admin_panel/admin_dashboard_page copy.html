@@ -1,0 +1,102 @@
+<!-- templates/dashboard.html -->
+{% extends "admin_panel/admin_panel_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<style>
+    *{
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    .cards{
+        display: flex;
+        flex-direction: row;
+        flex-flow: wrap;
+        justify-content: space-evenly;
+    }
+    .card{
+        margin: 20px 0;
+         flex: 1 1 calc(25%  -50px); 
+        width: 30%;
+        /* height: 150px; */
+        border-radius: 10%;
+        background-color: red;
+        padding: 20px 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: white;
+        font-weight: bold;
+    }
+    .card .card-title{
+        font-size: 40px;
+    }
+    .card .data{
+        /* margin: 20px 10px; */
+        font-size: 30px;
+        /* text-align: center; */
+    }
+    .bg-green{
+        background-color: green;
+    }
+
+    .bg-orange{
+        background-color: orange;
+    }
+    .bg-blue{
+        background-color: blue;
+    }
+    .bg-yellow{
+        background-color:yellow;
+    }
+</style>
+
+<h1>Dashboard</h1>
+
+
+<p>Welcome to the dashboard.</p>
+
+    <div class="cards">
+        <div class="card">
+            
+            <div class="card-title">Total Users</div>
+            <div class="data">
+                {{ user_count }}
+                
+            </div>
+        </div>
+
+
+        <div class="card bg-green">
+            
+            <div class="card-title">Pending Approvals</div>
+            <div class="data">1</div>
+        </div>
+
+        <div class="card bg-blue">
+            
+            <div class="card-title">Faculty</div>
+            <div class="data">
+                 {{faculty_count}}
+            </div>
+        </div>
+
+        <div class="card bg-orange">
+            
+            <div class="card-title">Students</div>
+            <div class="data">
+                {{student_count}}
+            </div>
+        </div>
+
+        <div class="card bg-yellow">
+            
+            <div class="card-title">Alumni</div>
+            <div class="data">
+                 {{alumni_count}}
+            </div>
+        </div>
+
+       
+    </div>
+
+
+{% endblock %}

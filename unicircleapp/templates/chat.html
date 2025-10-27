@@ -1,0 +1,324 @@
+{% extends "homepage_base.html" %}
+{% load static %}
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<style>
+/* modest layout + responsive */
+.chat-container { width:100%; max-width:1200px; margin:1rem auto; height:calc(100vh - 140px); background:#FAF9F6; border-radius:.25rem; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.05); display:flex; }
+.chat-list { width:320px; min-width:260px; border-right:1px solid #e9ecef; background:#fff; overflow-y:auto; }
+.user-row { padding:.75rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.75rem; border-bottom:1px solid #f1f1f1; }
+.user-row:hover { background:#f8f9fa; }
+.avatar-sm { width:44px; height:44px; object-fit:cover; border-radius:50%; flex-shrink:0; }
+.chat-thread { flex:1; display:flex; flex-direction:column; background:#FAF9F6; }
+.thread-header { height:72px; display:flex; align-items:center; padding:0 .75rem; border-bottom:1px solid #e9ecef; }
+.avatar-md { width:54px; height:54px; border-radius:50%; object-fit:cover; margin-right:.75rem; }
+.messages { padding:1rem; overflow-y:auto; flex:1; }
+.message-bubble { max-width:70%; padding:.6rem .8rem; border-radius:.8rem; word-wrap:break-word; }
+.message-me { background:#FF4500; color:#fff; margin-left:auto; border-bottom-right-radius:.25rem; }
+.message-other { background:#f1f1f1; color:#212529; margin-right:auto; }
+.message-row { display:flex; gap:.6rem; margin-bottom:.6rem; align-items:flex-end; }
+.message-input-area { border-top:1px solid #e9ecef; padding:.6rem; background:#fff; }
+@media (max-width:768px) {
+  .chat-list { width:100%; min-width:auto; height:240px; border-right:none; border-bottom:1px solid #e9ecef; }
+  .chat-container { height:auto; flex-direction:column; }
+}
+</style>
+
+<div class="container-fluid">
+  <div class="chat-container">
+    <!-- Left list -->
+<div class="chat-list">
+  <div class="p-3 border-bottom bg-white">
+    <a style="text-decoration: none; color: grey;" href = "{% url 'chat:chat_page' %} "class="mb-0">Chats</a>
+    <!-- Example navbar unread badge location (you can also put this in homepage_base.html) -->
+    <!-- <span id="nav-chat-unread" class="badge bg-danger" style="margin-left:8px; display:none;"></span> -->
+  </div>
+  <div id="usersList">
+    {% for u in users_data %}
+    <div class="user-row" data-username="{{ u.username }}" data-name="{{ u.full_name }}">
+      {% if u.picture %}
+        <img src="{{ u.picture }}" class="avatar-sm" alt="avatar">
+      {% else %}
+        <img src="{% static 'images/default_avatar.jpg' %}" class="avatar-sm" alt="avatar">
+      {% endif %}
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between align-items-start">
+          <strong class="small mb-0 text-truncate">{{ u.full_name }}</strong>
+          <div style="text-align:right;">
+            <small class="text-muted" id="last-time-{{ u.username }}">
+              {% if u.last_time %}{{ u.last_time|date:"H:i" }}{% endif %}
+            </small>
+            <!-- unread badge -->
+            <div>
+              {% if u.unread_count and u.unread_count > 0 %}
+                <span class="badge bg-danger small ms-1 user-unread-badge" data-username="{{ u.username }}">{{ u.unread_count }}</span>
+              {% else %}
+                <span class="badge bg-danger small ms-1 user-unread-badge" data-username="{{ u.username }}" style="display:none;"></span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="small text-muted">
+          {% if u.last_preview %}
+            {% if u.last_from_me %}You: {% endif %}{{ u.last_preview }}
+          {% else %}
+            @{{ u.username }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+    <!-- Right thread -->
+    <div class="chat-thread d-flex flex-column">
+<a id="chat-header" class="thread-header d-none text-decoration-none text-dark" href="#">
+  <img id="chat-header-pic" src="{% static 'images/default_avatar.jpg' %}" class="avatar-md" alt="user pic">
+  <div>
+    <div id="chat-header-name" class="h6 mb-0"></div>
+    <div id="chat-header-username" class="small text-muted"></div>
+  </div>
+</a>
+
+
+<div id="chat-placeholder" class="flex-fill d-flex align-items-center justify-content-center text-muted">
+  Select a user from the left to start chatting
+</div>
+
+
+      <div id="chat-messages" class="messages d-none"></div>
+
+      <div id="chat-input-area" class="message-input-area d-none">
+        <div class="input-group">
+          <input id="chat-message-input" type="text" class="form-control" placeholder="Type a message..." autocomplete="off">
+          <button id="chat-message-send" class="btn btn-primary" style="background-color: #FF4500;">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- jQuery (load only if not already present) -->
+<script>
+if (!window.jQuery) {
+  var s = document.createElement('script');
+  s.src = "https://code.jquery.com/jquery-3.6.0.min.js";
+  s.crossOrigin = "anonymous";
+  document.head.appendChild(s);
+}
+</script>
+
+<script>
+(function waitForJQuery(next) {
+  if (window.jQuery) return next();
+  setTimeout(function(){ waitForJQuery(next); }, 20);
+})(function() {
+  const $ = window.jQuery;
+  const DEFAULT_AVATAR = "{% static 'images/default_avatar.jpg' %}";
+
+  // --- CSRF token from cookie (safe for AJAX) ---
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const c = cookies[i].trim();
+        if (c.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+      if (!(/^GET|HEAD|OPTIONS|TRACE$/i.test(settings.type)) && !this.crossDomain) {
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      }
+    }
+  });
+
+  let currentChatUser = null;
+  let lastMessageCount = 0;
+  let pollingHandle = null;
+  let unreadPollHandle = null;
+
+  function escapeHtml(text) {
+    return $('<div/>').text(text).html();
+  }
+  function safeImg(src) { return src ? src : DEFAULT_AVATAR; }
+
+  function buildMessagesHtml(messages) {
+    const container = $('<div/>');
+    (messages || []).forEach(function(msg) {
+      if (!msg) return;
+      if (msg.mine) {
+        container.append(`<div class="message-row justify-content-end"><div class="message-bubble message-me">${escapeHtml(msg.content)}</div></div>`);
+      } else {
+        const senderPic = safeImg(msg.sender_pic);
+        container.append(`<div class="message-row"><img src="${senderPic}" class="avatar-sm" alt="sender"><div class="message-bubble message-other">${escapeHtml(msg.content)}</div></div>`);
+      }
+    });
+    return container.html();
+  }
+
+  function loadMessages(username, scrollToBottom = true) {
+    if (!username) return;
+    $.get(`/chats/messages/${encodeURIComponent(username)}/`).done(function(data) {
+      if (data.error) { alert(data.error); return; }
+
+      currentChatUser = data.other_user && data.other_user.username ? data.other_user.username : username;
+      $('#chat-header-pic').attr('src', safeImg(data.other_user && data.other_user.picture));
+$('#chat-header-name').text(data.other_user?.name || data.other_user?.username || username);
+$('#chat-header-username').text("@" + (data.other_user?.username || username));
+
+// Set the profile link
+if (data.other_user && data.other_user.username) {
+  $('#chat-header').attr('href', `/${encodeURIComponent(data.other_user.username)}/`);
+} else {
+  $('#chat-header').attr('href', '#');
+}
+
+$('#chat-header').removeClass('d-none');
+
+
+      $('#chat-placeholder').addClass('d-none');
+      $('#chat-messages').removeClass('d-none').html(buildMessagesHtml(data.messages || []));
+      $('#chat-input-area').removeClass('d-none');
+
+      const container = $('#chat-messages')[0];
+      if (scrollToBottom && container) container.scrollTop = container.scrollHeight;
+      lastMessageCount = (data.messages || []).length;
+    }).fail(function(xhr){
+      console.error('Failed to fetch messages for', username, xhr && xhr.status);
+    });
+  }
+
+  function sendMessage() {
+    const msg = $('#chat-message-input').val().trim();
+    if (!msg || !currentChatUser) return;
+    $('#chat-message-send').prop('disabled', true);
+
+    $.post('/chats/send/', { to: currentChatUser, message: msg }).done(function(data) {
+      if (data.error) { alert(data.error); return; }
+      // append optimistically
+      $('#chat-messages').append(`<div class="message-row justify-content-end"><div class="message-bubble message-me">${escapeHtml(data.content)}</div></div>`);
+      $('#chat-message-input').val('');
+      const m = $('#chat-messages')[0];
+      if (m) m.scrollTop = m.scrollHeight;
+      lastMessageCount += 1;
+    }).fail(function(xhr) {
+      alert('Failed to send message.');
+      console.error('send failed', xhr && xhr.status);
+    }).always(function() {
+      $('#chat-message-send').prop('disabled', false);
+    });
+  }
+
+  function startPolling() {
+    if (pollingHandle) clearInterval(pollingHandle);
+    pollingHandle = setInterval(function() {
+      if (!currentChatUser) return;
+      $.get(`/chats/messages/${encodeURIComponent(currentChatUser)}/`).done(function(data) {
+        if (!data.error && (data.messages || []).length !== lastMessageCount) {
+          // reload and scroll to bottom
+          loadMessages(currentChatUser, true);
+        }
+      }).fail(function(){ /* silent; will retry next tick */ });
+    }, 3000);
+  }
+
+  // ---------------------------
+  // Unread summary polling + UI
+  // ---------------------------
+  function updateUnreadBadges(data) {
+    // data: { total_unread_senders: number, per_user: [{username, unread_count}, ...] }
+
+    // Update navbar badge (element with id "nav-chat-unread" if present)
+    if (typeof data.total_unread_senders !== "undefined") {
+      const total = data.total_unread_senders;
+      const navBadge = document.getElementById('nav-chat-unread');
+
+        if (total > 0) {
+          navBadge.style.display = 'inline-block';
+          navBadge.textContent = total;
+        } else {
+          navBadge.style.display = 'none';
+          navBadge.textContent = '0';
+        }
+    }
+
+    $('.user-unread-badge').each(function() {
+      $(this).hide().text('');
+    });
+
+    // Populate per-user badges
+    (data.per_user || []).forEach(function(item) {
+      const username = item.username;
+      const count = item.unread_count;
+      const badge = $('.user-unread-badge[data-username="' + username + '"]');
+      if (badge.length) {
+        if (count > 0) {
+          badge.show().text(count);
+        } else {
+          badge.hide().text('');
+        }
+      }
+    });
+  }
+
+  function fetchUnreadSummary() {
+    $.get('/chats/unread_summary/').done(function(d) {
+      updateUnreadBadges(d || {});
+    }).fail(function() {
+      // ignore failures; next tick will retry
+    });
+  }
+
+  function startUnreadPolling() {
+    if (unreadPollHandle) clearInterval(unreadPollHandle);
+    // fire immediately
+    fetchUnreadSummary();
+    unreadPollHandle = setInterval(fetchUnreadSummary, 3000);
+  }
+
+  // ---------------------------
+  // Event handlers
+  // ---------------------------
+  $(document).ready(function() {
+    // clicking a user: load messages, start message polling, and hide their unread badge immediately
+    $('#usersList').on('click', '.user-row', function() {
+      const username = $(this).data('username');
+      if (!username) return;
+      $('.user-row').removeClass('bg-light');
+      $(this).addClass('bg-light');
+
+      // hide unread badge immediately for responsiveness
+      const badge = $('.user-unread-badge[data-username="' + username + '"]');
+      if (badge.length) { badge.hide().text(''); }
+
+      loadMessages(username, true);
+      startPolling();
+    });
+
+    // send handlers
+    $('#chat-message-send').on('click', sendMessage);
+    $('#chat-message-input').on('keypress', function(e) {
+      if (e.which === 13) { sendMessage(); return false; }
+    });
+
+    // start unread polling (updates left-hand badges + navbar)
+    startUnreadPolling();
+
+    // optional: auto-select first user
+    // const first = $('#usersList .user-row').first();
+    // if (first.length) first.trigger('click');
+  });
+});
+</script>
+
+{% endblock %}

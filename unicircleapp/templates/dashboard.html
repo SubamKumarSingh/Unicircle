@@ -1,0 +1,638 @@
+{% extends "homepage_base.html" %}
+{% block title %}{{user.username}}'s Homepage{% endblock %}
+{% block content %}
+{% load static %}
+    <div class="posts-feed" style="width: 50vw;">
+
+      {% if user.user_type != 'student' and user.is_approved %}
+      <!-- CREATE POST SECTION -->
+      <div class="container my-5">
+        <div class="create-post-card">
+          <h2>Create a Post</h2>
+          <form id="create-post-form" method="post" enctype="multipart/form-data" action="{% url 'post:create_post' %}">
+            {% csrf_token %} {{ form.as_p }}
+
+            <button type="button" class="btn btn-outline-secondary" id="generate-ai">
+      Generate with AI
+    </button>
+            <button type="submit" class="btn btn-outline-primary" id="post-submit-button">
+              Post
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+      <!-- AI GENERATE POST content -->
+<script>
+
+
+// Helper to read CSRF token from cookie (Django default)
+function getCookie(name) {
+  const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+  return v ? decodeURIComponent(v.split('=')[1]) : null;
+}
+
+document.getElementById('generate-ai').addEventListener('click', async () => {
+  const btn = document.getElementById('generate-ai');
+  const createBtn = document.getElementById('post-submit-button');
+
+  // hide create button while generating
+  if (createBtn) createBtn.style.display = 'none';
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  // read current form values
+  const title = document.querySelector('#id_title')?.value || '';
+  const contentInstruction = document.querySelector('#id_content')?.value || '';
+
+  try {
+    const res = await fetch('{% url "post:generate_ai_post" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ title, content_instruction: contentInstruction })
+    });
+
+    if (!res.ok) throw new Error('Server error');
+
+    const data = await res.json(); // expected: { generated_text: "..." }
+
+    // put generated text into content field (replace or append as desired)
+    const contentEl = document.querySelector('#id_content');
+    contentEl.value = data.generated_text;
+    contentEl.focus();
+
+  } catch (err) {
+    console.error(err);
+    alert('AI generation failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate with AI';
+
+    // show create button again after result/response
+    if (createBtn) createBtn.style.display = 'inline-block';
+  }
+});
+</script>
+
+      <!-- LIST OF POSTS -->
+      <div class="container my-5">
+        <h2 class="mb-4 text-orangered">Posts</h2>
+        <div class="posts-area">
+          {% for post in posts %}
+          <div class="post-main" data-post-id="{{ post.id }}">
+            <div class="post-header">
+              <div class="profile">
+                <img src="{% if post.author.profile.profile_picture and post.author.profile.profile_picture.name %}
+                  {{ post.author.profile.profile_picture.url }}
+                {% else %}
+                  {% static 'images/default_avatar.jpg' %}
+                {% endif %}" alt="Profile Picture" />
+                <div class="user-details">
+                  <a class="user-name"  href="{% url 'unicircleapp:user_view_profile_page'  post.author.username %}">{{ post.author.username }}</a>
+                  <div class="user-type">{{ post.author.user_type }}</div>
+                  <p class="post-date">{{ post.created_at|timesince }} ago</p>
+                </div>
+              </div>
+              <div class="options">
+                {% if user.is_approved and post.author == user and user.user_type != 'student' %}
+                  <form action="{% url 'post:delete_post' post.id %}" method="post" class="delete-post-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+            <div class="post-body">
+
+              <div class="post-title">{{ post.title }}</div>
+              <!-- <div class="post-description">{{ post.content }}</div> -->
+               <div class="post-description"
+     data-full="{{ post.content|escape }}">
+  {{ post.content|truncatewords:100 }}
+</div>
+
+            </div>
+
+            {% if post.image %}
+            <div class="post-image-container">
+              <img class="post-image" src="{{ post.image.url }}" alt="Post Image" />
+            </div>
+            {% endif %}
+
+            <!-- Interaction section -->
+            <div class="post-interaction">
+              {% if user.is_approved %}
+                <!-- Like Button -->
+                <form action="{% url 'post:like_post' post.id %}" method="post" class="like-form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-like">
+                    {% if post.liked_by_user %}
+                      <i class="fa-solid fa-heart"></i> Unlike ({{ post.likes.count }}) 
+                    {% else %}
+                      <i class="fa-regular fa-heart"></i> Like ({{ post.likes.count }}) 
+                    {% endif %}
+                  </button>
+                </form>
+              {% else %}
+                <!-- Disabled Like -->
+                <button type="button" class="btn btn-like" disabled>
+                  <i class="fa-regular fa-heart"></i> Like ({{ post.likes.count }})
+                </button>
+              {% endif %}
+
+              <!-- Comments Section -->
+              <h5 class="mt-3">Comments</h5>
+              <div class="comments-list">
+                {% for comment in post.comments.all %}
+                <div class="comment-item" data-comment-id="{{ comment.id }}">
+                  <b>{{ comment.author.username }}</b> {{ comment.content }}
+                  {% if user.is_approved and comment.author == user %}
+                    <form action="{% url 'post:delete_comment' comment.id %}" method="post"
+                      class="delete-comment-form d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-link text-danger btn-sm" style="color: white;">
+                        Delete
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted">No comments yet.</p>
+                {% endfor %}
+              </div>
+
+              {% if user.is_approved %}
+                <!-- Add Comment -->
+                <form action="{% url 'post:comment_post' post.id %}" method="post" class="comment-form mt-2">
+                  {% csrf_token %} {{ comment_form.as_p }}
+                  <button type="submit" class="btn btn-outline-orangered btn-sm">
+                    Comment
+                  </button>
+                </form>
+              {% else %}
+                <p class="text-muted mt-2">You must be approved to comment.</p>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted">No posts yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <aside id="fundraisersSidebar"
+       class="fundraisers-sidebar"
+       style="position: sticky; top: 15vh; width: 22vw; max-height: 80vh; height:fit-content;
+              background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+              padding: 20px; overflow: hidden; display: flex; flex-direction: column; gap: 14px;">
+
+  <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:6px;">
+    <h3 style="font-weight:600; color:#f4511e; font-size:1.1rem;">Active Fundraisers</h3>
+    <a href="{% url 'fundraisers:allfundraiserspage' %}" 
+       style="font-size:0.85rem; color:#888; text-decoration:none;">View all</a>
+  </div>
+
+  <div id="fundraiserList" style="display:flex; flex-direction:column; gap:10px; transition: all 0.6s ease;">
+    {% for f in fundraisers %}
+      {% if f.active %}
+      <a href="{% url 'fundraisers:allfundraiserspage' %}" class="fundraiser-item" 
+         style="display:flex; align-items:center; gap:10px; padding:10px; background:#fafafa;
+                border-radius:12px; border:1px solid #eee; text-decoration:none; color:#333;">
+        <img src="{% if f.image %}{{ f.image.url }}{% else %}{% static 'images/default_fund.png' %}{% endif %}" 
+             alt="{{ f.title }}" 
+             style="width:48px; height:48px; object-fit:cover; border-radius:8px;">
+        <div style="flex:1;">
+          <div style="font-weight:500;">{{ f.title|truncatechars:25 }}</div>
+          <small style="color:#888;">₹{{ f.raised|default:0 }} / ₹{{ f.goal }}</small>
+          <div style="height:5px; border-radius:3px; background:#eee; overflow:hidden; margin-top:4px;">
+            <div style="background:linear-gradient(90deg,#ff7043,#f4511e); 
+            transition:width 0.4s;height:5px; 
+            /* width:{% widthratio f.raised f.goal 100 %}%;  */
+                        ">
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if request.user.user_type != 'student' %}
+  <!-- FOLLOW REQUESTS PANEL -->
+  <div id="followRequestsPanel"
+  style="margin-top: 20px; display:flex; flex-direction:column; gap:10px; border-top: #f4511e;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color:#f4511e; font-weight:600; font-size:1.1rem;">Follow Requests</h3>
+    <span id="noRequestsMessage" style="font-size:0.85rem; color:#888; display:none;">No pending requests</span>
+  </div>
+  
+  <div id="followRequestsList" style="display:flex; flex-direction:column; gap:8px;">
+    <!-- AJAX will populate requests here -->
+     None
+  </div>
+  
+  {% endif %}
+</div>
+</aside>
+
+<script>
+
+// Fetch pending follow requests
+async function loadFollowRequests() {
+  try {
+    const res = await fetch("{% url 'unicircleapp:fetch_follow_requests' %}");
+    if (!res.ok) throw new Error("Failed to fetch follow requests");
+    const data = await res.json();
+
+    const list = document.getElementById("followRequestsList");
+    const noMsg = document.getElementById("noRequestsMessage");
+    list.innerHTML = "";
+
+    if (!data.requests.length) {
+      noMsg.style.display = "inline";
+      return;
+    } else {
+      noMsg.style.display = "none";
+    }
+
+    data.requests.forEach(req => {
+      const div = document.createElement("div");
+      div.classList.add("follow-request-item");
+      div.style.display = "flex";
+      div.style.justifyContent = "space-between";
+      div.style.alignItems = "center";
+      div.style.padding = "8px";
+      div.style.background = "#fafafa";
+      div.style.borderRadius = "8px";
+      div.style.border = "1px solid #eee";
+
+      div.innerHTML = `
+        <span>${req.follower_name} (${req.follower_username})</span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-accept" data-from="${req.follower_username}">Accept</button>
+          <button class="btn-reject" data-from="${req.follower_username}">Reject</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Handle Accept / Reject
+document.getElementById("followRequestsList").addEventListener("click", async (e) => {
+  if (e.target.classList.contains("btn-accept") || e.target.classList.contains("btn-reject")) {
+    const follower = e.target.dataset.from;
+    const action = e.target.classList.contains("btn-accept") ? "accept" : "reject";
+
+    try {
+      const res = await fetch("{% url 'unicircleapp:handle_follow_request' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `from=${follower}&action=${action}`
+      });
+
+      if (!res.ok) throw new Error("Failed to process request");
+      const data = await res.json();
+      console.log(data.message);
+
+      // Remove the request from list
+      e.target.closest(".follow-request-item").remove();
+
+      // Show "No requests" if empty
+      const list = document.getElementById("followRequestsList");
+      if (!list.children.length) document.getElementById("noRequestsMessage").style.display = "inline";
+
+    } catch (err) {
+      console.error(err);
+      alert("Error processing follow request");
+    }
+  }
+});
+
+// Initial load
+loadFollowRequests();
+
+// Optional: auto-refresh every 30s
+setInterval(loadFollowRequests, 30000);
+</script>
+
+<script>
+  // READ MORE / READ LESS helper
+  const WORD_LIMIT = 100; // change this to set the threshold
+
+  function truncateWords(text, limit) {
+    const words = text.trim().split(/\s+/);
+    if (words.length <= limit) return text;
+    return words.slice(0, limit).join(' ') + '...';
+  }
+
+  // Apply read-more to a single .post-description element
+  function applyReadMore(el, wordLimit = WORD_LIMIT) {
+    if (!el) return;
+    // If we've already processed this element, skip
+    if (el.dataset.readmoreApplied === "1") return;
+
+    const full = el.dataset.full ?? el.textContent ?? '';
+    const trimmed = truncateWords(full, wordLimit);
+
+    // If full length is within limit, just put full and don't add toggle
+    const fullWordsCount = full.trim().split(/\s+/).filter(Boolean).length;
+    if (fullWordsCount <= wordLimit) {
+      el.textContent = full;
+      el.dataset.readmoreApplied = "1";
+      return;
+    }
+
+    // Build truncated node + toggle button
+    el.textContent = trimmed;
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'readmore-toggle btn btn-link'; // you can style as desired
+    toggle.style.padding = '0';
+    toggle.style.marginLeft = '6px';
+    toggle.textContent = 'Read more';
+    toggle.setAttribute('aria-expanded', 'false');
+
+    toggle.addEventListener('click', function () {
+      const expanded = this.getAttribute('aria-expanded') === 'true';
+      if (!expanded) {
+        // show full
+        el.textContent = full;
+        this.textContent = 'Read less';
+        this.setAttribute('aria-expanded', 'true');
+      } else {
+        // show trimmed
+        el.textContent = trimmed;
+        this.textContent = 'Read more';
+        this.setAttribute('aria-expanded', 'false');
+      }
+      // re-append toggle so it follows the text
+      el.parentNode && el.parentNode.insertBefore(this, el.nextSibling);
+    });
+
+    // ensure toggle sits next to the element
+    el.parentNode && el.parentNode.insertBefore(toggle, el.nextSibling);
+    el.dataset.readmoreApplied = "1";
+  }
+
+  // Apply to all existing descriptions
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.post-description').forEach(function (el) {
+      applyReadMore(el, WORD_LIMIT);
+    });
+  });
+
+  // Helper you can call for any newly created post DOM node
+  // e.g. after injecting a new post element: applyReadMoreToNode(newDiv)
+  function applyReadMoreToNode(node) {
+    if (!node) return;
+    // if node itself is the description
+    if (node.matches && node.matches('.post-description')) {
+      applyReadMore(node, WORD_LIMIT);
+      return;
+    }
+    // else, find children
+    node.querySelectorAll && node.querySelectorAll('.post-description').forEach(function (el) {
+      applyReadMore(el, WORD_LIMIT);
+    });
+  }
+</script>
+
+
+<script>
+  const DEFAULT_AVATAR = "{% static 'images/default_avatar.jpg' %}";
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const csrftoken = getCookie("csrftoken");
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // --- CREATE POST ---
+    const postForm = document.querySelector("#create-post-form");
+
+    if (postForm) {
+      postForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const title = postForm.querySelector('input[name="title"]')?.value.trim();
+        const content = postForm.querySelector('textarea[name="content"]')?.value.trim();
+
+        // ✅ Basic validation
+        if (!title || !content) {
+          alert("Please enter both title and content before submitting your post.");
+          return;
+        }
+
+        const formData = new FormData(postForm);
+
+        fetch(postForm.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: formData,
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.errors) {
+              alert("Error: " + JSON.stringify(data.errors));
+              return;
+            }
+
+            const postsArea = document.querySelector(".posts-area");
+            const div = document.createElement("div");
+            div.classList.add("post-main");
+            div.setAttribute("data-post-id", data.id);
+            profile_link = `/${data.author}`
+            div.innerHTML = `
+              <div class="post-header">
+                <div class="profile"> 
+                  <img src="${data.author_picture || DEFAULT_AVATAR}" alt="Profile Picture" />
+                  <div class="user-details">
+                    <a class="user-name" href = ${profile_link}>${data.author}</a>
+                    <div class="user-type">${data.user_type}</div>
+                    <p class="post-date">0 min ago</p>
+                  </div>
+                </div>
+                <div class="options">
+                  <form action="${data.delete_post_url}" method="post" class="delete-post-form">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrftoken}">
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                  </form>
+                </div>
+              </div>
+              <div class="post-body">
+              <div class="post-title">${title}</div><br>
+              <div class="post-description">${data.content}</div>
+              </div>
+              ${
+                data.image
+                  ? `<div class="post-image-container"><img class="post-image" src="${data.image}" alt="Post Image" /></div>`
+                  : ""
+              }
+              <div class="post-interaction">
+                <form action="${data.like_post_url}" method="post" class="like-form">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="${csrftoken}">
+                  <button type="submit" class="btn btn-like">
+                    <i class="fa-regular fa-heart"></i> Like (0)
+                  </button>
+                </form>
+                <h5 class="mt-3">Comments</h5>
+                <div class="comments-list"><p class="text-muted">No comments yet.</p></div>
+                <form action="${data.create_comment_url}" method="post" class="comment-form mt-2">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="${csrftoken}">
+                  <input type="text" name="content" required class="form-control mb-2"/>
+                  <button type="submit" class="btn btn-outline-orangered btn-sm">Comment</button>
+                </form>
+              </div>
+            `;
+
+            postsArea.prepend(div);
+            applyReadMoreToNode(div);
+            postForm.reset();
+          });
+      });
+    }
+
+    // --- GLOBAL FORM HANDLER (delegation for dynamically added posts) ---
+    document.body.addEventListener("submit", function (e) {
+      const form = e.target;
+
+      // LIKE
+      if (form.matches(".like-form")) {
+        e.preventDefault();
+        const btn = form.querySelector(".btn-like");
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            btn.innerHTML = data.liked
+              ? `<i class="fa-solid fa-heart"></i> Unlike (${data.likes})`
+              : `<i class="fa-regular fa-heart"></i> Like (${data.likes})`;
+          });
+      }
+
+      // COMMENT
+      if (form.matches(".comment-form")) {
+        e.preventDefault();
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new FormData(form),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.errors) {
+              alert("Error: " + JSON.stringify(data.errors));
+              return;
+            }
+            const list = form.previousElementSibling;
+            if (list.querySelector("p.text-muted")) list.innerHTML = "";
+            const div = document.createElement("div");
+            div.classList.add("comment-item");
+            div.setAttribute("data-comment-id", data.id);
+            div.innerHTML = `<b>${data.author}</b> ${data.content}
+              <form action="${data.delete_comment_url}" method="post" class="delete-comment-form d-inline">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrftoken}">
+                <button type="submit" class="btn btn-link text-danger btn-sm">Delete</button>
+              </form>`;
+            list.appendChild(div);
+            form.reset();
+          });
+      }
+
+      // DELETE POST
+      if (form.matches(".delete-post-form")) {
+        e.preventDefault();
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.deleted) form.closest(".post-main").remove();
+          });
+      }
+
+      // DELETE COMMENT
+      if (form.matches(".delete-comment-form")) {
+        e.preventDefault();
+        fetch(form.action, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.deleted) form.closest(".comment-item").remove();
+          });
+      }
+    });
+  });
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const list = document.querySelector("#fundraiserList");
+  const items = Array.from(list.querySelectorAll(".fundraiser-item"));
+  const visibleCount = 3;
+  let start = 0;
+
+  if (items.length <= visibleCount) return; // no need to rotate
+
+  // Initial render
+  function renderList() {
+    list.innerHTML = "";
+    for (let i = 0; i < visibleCount; i++) {
+      const index = (start + i) % items.length;
+      list.appendChild(items[index].cloneNode(true));
+    }
+  }
+
+  renderList();
+
+  // Auto rotate every 5 seconds
+  setInterval(() => {
+    start = (start + 1) % items.length;
+    renderList();
+  }, 5000);
+});
+</script>
+
+{% endblock %}

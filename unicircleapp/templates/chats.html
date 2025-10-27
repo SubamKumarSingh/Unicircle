@@ -1,0 +1,146 @@
+{% extends "homepage_base.html" %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+{% load static %}
+<!-- Chat page content (extends homepage_base.html) -->
+<div class="w-full h-screen bg-[#FAF9F6] flex">
+  <!-- Chat Thread -->
+  <div class="flex-1 flex flex-col border-r border-gray-200">
+    <div id="chat-header" class="hidden flex items-center px-4 py-3 bg-[#FF4500] text-white">
+      <img id="chat-header-pic" src="" class="w-10 h-10 rounded-full mr-3" alt="User pic">
+      <div>
+        <h2 id="chat-header-name" class="font-semibold"></h2>
+        <p id="chat-header-username" class="text-sm opacity-80"></p>
+      </div>
+    </div>
+
+    <div id="chat-placeholder" class="flex-1 flex items-center justify-center text-gray-400">
+      Select a user to start chatting
+    </div>
+
+    <div id="chat-log" class="hidden flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+    <div id="chat-input-box" class="hidden p-3 border-t border-gray-200 flex">
+      <input id="chat-message-input" type="text" placeholder="Type a message..." class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF4500]" />
+      <button id="chat-message-send" class="ml-2 bg-[#FF4500] text-white px-4 py-2 rounded-full hover:bg-red-600">Send</button>
+    </div>
+  </div>
+
+  <!-- Chat List -->
+  <div class="w-80 flex flex-col bg-white shadow-md">
+    <div class="p-4 border-b bg-[#FF4500] text-white font-semibold text-lg">Chats</div>
+    <div class="flex-1 overflow-y-auto">
+      {% for user in users %}
+      <div data-username="{{ user.username }}" data-name="{{ user.get_full_name }}" class="chat-user flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b">
+        {% if user.profile and user.profile.profile_picture %}
+          <img src="{{ user.profile.profile_picture.url }}" class="w-10 h-10 rounded-full mr-3" alt="profile">
+        {% else %}
+          <img src="{% static 'images/default_avatar.jpg' %}" class="w-10 h-10 rounded-full mr-3" alt="default profile">
+        {% endif %}
+        <div>
+          <h3 class="font-semibold text-gray-900">{{ user.get_full_name }}</h3>
+          <p class="text-sm text-gray-500">@{{ user.username }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Include Tailwind & jQuery for this page only -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+if (!window.jQuery) {
+  var s = document.createElement('script');
+  s.src = "https://code.jquery.com/jquery-3.6.0.min.js";
+  s.crossOrigin = "anonymous";
+  document.head.appendChild(s);
+}
+</script>
+<script>
+let currentChatUser = null;
+let lastMessageCount = 0;1
+
+// Function to load messages
+function loadMessages(username, scrollToBottom = true) {
+    $.get(`/chats/messages/${username}/`, function(data) {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        currentChatUser = data.other_user.username;
+        $("#chat-header-pic").attr("src", data.other_user.picture || '{% static "images/default_avatar.jpg" %}');
+        $("#chat-header-name").text(data.other_user.name);
+        $("#chat-header-username").text("@" + data.other_user.username);
+        $("#chat-header").removeClass("hidden");
+        $("#chat-placeholder").addClass("hidden");
+        $("#chat-log").removeClass("hidden");
+        $("#chat-input-box").removeClass("hidden");
+
+        let chatLog = $("#chat-log");
+        chatLog.empty();
+        data.messages.forEach(msg => {
+            if (msg.mine) {
+                chatLog.append(`<div class='flex justify-end'><div class='bg-[#FF4500] text-white p-2 rounded-xl max-w-xs'>${msg.content}</div></div>`);
+            } else {
+                chatLog.append(`<div class='flex items-start'><img src='${msg.sender_pic || "{% static 'default_avatar.jpg' %}"}' class='w-8 h-8 rounded-full mr-2'><div class='bg-gray-100 text-gray-800 p-2 rounded-xl max-w-xs'>${msg.content}</div></div>`);
+            }
+        });
+        if(scrollToBottom) chatLog.scrollTop(chatLog[0].scrollHeight);
+
+        lastMessageCount = data.messages.length;
+    });
+}
+
+// Send a message
+function sendMessage() {
+    let msg = $("#chat-message-input").val().trim();
+    if (!msg || !currentChatUser) return;
+
+    $.post("/chats/send/", {
+        to: currentChatUser,
+        message: msg,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    }, function(data) {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        $("#chat-log").append(`<div class='flex justify-end'><div class='bg-[#FF4500] text-white p-2 rounded-xl max-w-xs'>${data.content}</div></div>`);
+        $("#chat-message-input").val('');
+        $("#chat-log")[0].scrollTop = $("#chat-log")[0].scrollHeight;
+        lastMessageCount += 1;
+    });
+}
+
+$(document).ready(function() {
+    // Click user to open chat
+    $(".chat-user").click(function() {
+        let username = $(this).data("username");
+        loadMessages(username);
+    });
+
+    // Send button
+    $("#chat-message-send").click(sendMessage);
+
+    // Press Enter to send
+    $("#chat-message-input").keypress(function(e){
+        if(e.which == 13){ sendMessage(); return false; }
+    });
+
+    // Auto-refresh every 3 seconds
+    setInterval(function() {
+        if(currentChatUser){
+            $.get(`/chats/messages/${currentChatUser}/`, function(data){
+                if(!data.error && data.messages.length != lastMessageCount){
+                    loadMessages(currentChatUser, true);
+                }
+            });
+        }
+    }, 3000);
+});
+</script>
+{% endblock %}

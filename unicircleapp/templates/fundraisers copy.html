@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#FAF9F6] h-screen flex">
+
+  <!-- Chat Thread -->
+  <div class="flex-1 flex flex-col border-r border-gray-200">
+    <!-- Header -->
+    <div class="flex items-center px-4 py-3 bg-[#FF4500] text-white">
+      <img src="https://i.pravatar.cc/40?img=1" alt="Profile" class="w-10 h-10 rounded-full mr-3">
+      <div>
+        <h2 class="font-semibold">John Doe</h2>
+        <p class="text-sm opacity-80">@johnd</p>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3">
+      <!-- Received -->
+      <div class="flex items-start">
+        <img src="https://i.pravatar.cc/40?img=2" class="w-8 h-8 rounded-full mr-2">
+        <div class="bg-gray-100 text-gray-800 p-2 rounded-xl max-w-xs">
+          Hey! How’s it going?
+        </div>
+      </div>
+
+      <!-- Sent -->
+      <div class="flex justify-end">
+        <div class="bg-[#FF4500] text-white p-2 rounded-xl max-w-xs">
+          All good! Working on the new project 🚀
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="p-3 border-t border-gray-200 flex">
+      <input type="text" placeholder="Type a message..."
+        class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF4500]" />
+      <button class="ml-2 bg-[#FF4500] text-white px-4 py-2 rounded-full hover:bg-red-600">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <!-- Chat List -->
+  <div class="w-80 flex flex-col bg-white shadow-md">
+    <!-- Header -->
+    <div class="p-4 border-b bg-[#FF4500] text-white font-semibold text-lg">
+      Chats
+    </div>
+    <!-- List -->
+    <div class="flex-1 overflow-y-auto">
+      <!-- Chat item -->
+      <div class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b">
+        <img src="https://i.pravatar.cc/40?img=3" class="w-10 h-10 rounded-full mr-3">
+        <div>
+          <h3 class="font-semibold text-gray-900">Alice Smith</h3>
+          <p class="text-sm text-gray-500">@alices</p>
+        </div>
+      </div>
+
+      <div class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b">
+        <img src="https://i.pravatar.cc/40?img=4" class="w-10 h-10 rounded-full mr-3">
+        <div>
+          <h3 class="font-semibold text-gray-900">Bob Johnson</h3>
+          <p class="text-sm text-gray-500">@bobj</p>
+        </div>
+      </div>
+
+      <div class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b">
+        <img src="https://i.pravatar.cc/40?img=5" class="w-10 h-10 rounded-full mr-3">
+        <div>
+          <h3 class="font-semibold text-gray-900">Clara Lee</h3>
+          <p class="text-sm text-gray-500">@claral</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

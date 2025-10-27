@@ -1,0 +1,79 @@
+{% load socialaccount %}
+<!-- LOGIN MODAL -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0 shadow-none">
+      <div class="login-box">
+        <p>Login</p>
+        <form class="form-animation" name="login_form" id="login_form" method="post" action="{% url 'unicircleapp:landingpage' %}">
+          {% csrf_token %}
+          <input type="hidden" name="name" value="login_form">
+
+          <div class="user-box">
+            <input required type="text" name="login_username" id="login_username"
+                   value="{{ login_form.data.login_username|default:'' }}">
+            <label>Username</label>
+            {% if login_form.errors.login_username %}
+              {% for err in login_form.errors.login_username %}
+                <div class="field-error">{{ err }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <div class="user-box">
+            <input required type="password" name="login_password" id="login_password">
+            <label>Password</label>
+            {% if login_form.errors.login_password %}
+              {% for err in login_form.errors.login_password %}
+                <div class="field-error">{{ err }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- Custom Login Button -->
+          <div aria-label="User Login Button" tabindex="0" role="button" class="user-profile" id="login_button">
+            <div class="user-profile-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.33 0-8 2.17-8 5v1h16v-1c0-2.83-3.67-5-8-5z"/>
+              </svg>
+              <p>Login</p>
+            </div>
+          </div>
+        </form>
+
+        <!-- Google Login -->
+        <a href="{% provider_login_url 'google' %}" class="btn btn-danger mt-3 w-100">
+          Continue with Google
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var show_modal = "{{ show_modal|default:'' }}";
+$(document).ready(function () {
+  $("#login_button").click(function(event){
+      event.preventDefault();
+      $('#login_form').submit();
+  });
+});
+</script>
+<script>
+$(document).ready(function () {
+  $("#login_button").click(function(event){
+      event.preventDefault();
+      $('#login_form').submit();
+  });
+
+  // Open modal based on JS variable
+  if (show_modal === "login") {
+      $('#loginModal').modal('show');
+      $('#login_username').focus();
+  } else if (show_modal === "signup") {
+      $('#signupModal').modal('show');
+      $('#signup_username').focus();
+  }
+});
+</script>
+

@@ -1,0 +1,216 @@
+{ % load static % }
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset</title>
+    <style>
+        /* Reset styles for email compatibility */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+    
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        /* Main styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333333;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4a5568;
+            margin-bottom: 25px;
+        }
+        
+        .password-container {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .password-label {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+        
+        .password {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+            letter-spacing: 1px;
+            background-color: #edf2f7;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .warning {
+            background-color: #fff5f5;
+            border-left: 4px solid #fc8181;
+            padding: 15px;
+            margin: 25px 0;
+            font-size: 14px;
+            color: #c53030;
+        }
+        
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            background-color: #f7fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .social-links {
+            margin: 15px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #718096;
+            text-decoration: none;
+        }
+        
+        @media only screen and (max-width: 480px) {
+            .container {
+                width: 100% !important;
+            }
+            
+            .content {
+                padding: 20px 15px !important;
+            }
+            
+            .title {
+                font-size: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f5f7fa">
+        <tr>
+            <td align="center" style="padding: 20px 10px;">
+                <!-- Main Container -->
+                <table role="presentation" class="container" width="100%" cellspacing="0" cellpadding="0" border="0">
+                    <!-- Header -->
+                    <tr>
+                        <td class="header">
+                            <a href="#" class="logo">Unicircle</a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="content">
+                            <h1 class="title">Your New Password</h1>
+                            
+                            <p class="message">
+                                Hello {{ username }},
+                            </p>
+                            
+                            <p class="message">
+                                As requested, we've generated a new password for your account. You can use this temporary password to log in to your account.
+                            </p>
+                            
+                            <div class="password-container">
+                                <div class="password-label">Your temporary password:</div>
+                                <div class="password">{{ password }}</div>
+                            </div>
+                            
+                            <p class="message">
+                                For security reasons, we recommend that you change this password after logging in.
+                            </p>
+                            
+                            
+                            <div class="warning">
+                                <strong>Important:</strong> This is an auto-generated password. Please do not share it with anyone. If you didn't request this password change, please contact our support team immediately.
+                            </div>
+                            
+                            <p class="message">
+                                Thank you,<br>
+                                Unicircle
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer">
+                            
+                            <p>
+                                You're receiving this email because you requested a password reset for your Unicircle account.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

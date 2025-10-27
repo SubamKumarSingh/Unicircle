@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Profile Creation</title>
+  <style>
+    :root{
+      --accent: orangered;
+      --bg: #fff8f5;
+      --card: #fff; 
+      --muted: #6b6b6b;
+      --radius: 14px;
+      --shadow: 0 6px 20px rgba(0,0,0,0.06);
+      font-family: Inter, system-ui, sans-serif;
+    }
+    body{margin:0;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:36px 18px;color:#222;}
+    .wrapper{max-width:1100px;width:100%;}
+    h1{margin:0;font-size:24px;color:var(--accent)}
+    .note{margin:8px 0 20px;font-size:14px;color:var(--muted)}
+    .card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:grid;grid-template-columns:300px 1fr;gap:18px;}
+    .menu{padding:14px;border-radius:12px;}
+    .tabs{display:flex;flex-direction:column;gap:10px}
+    .tab{padding:10px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:all .18s ease;}
+    .tab.active{background:var(--accent);color:white;}
+    form{display:none;}
+    form.active{display:block}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    label{font-size:13px;color:#333}
+    input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e7e7e7;background:#fbfbfb;font-size:14px;}
+    .row-span{grid-column:1/-1}
+    .actions{margin-top:12px}
+    button{padding:10px 14px;border:none;border-radius:10px;cursor:pointer}
+    .primary{background:var(--accent);color:white;font-weight:600}
+    .ghost{background:transparent;border:1px solid #eee}
+    @media (max-width:880px){.card{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Create a Profile to Continue</h1>
+    <p class="note">Please fill only <strong>one</strong> form based on your role (Student / Alumni / Faculty). You may request changes later if needed.</p>
+    <div class="card">
+      <aside class="menu">
+        <div class="tabs">
+          <button class="tab active" data-target="student">Student</button>
+          <button class="tab" data-target="alumni">Alumni</button>
+          <button class="tab" data-target="faculty">Faculty</button>
+        </div>
+      </aside>
+      <main class="form-area">
+
+
+        <!-- STUDENT FORM -->
+        <form id="student" class="active" method="POST" enctype="multipart/form-data" action="{% url 'unicircleapp:profileCreationpage' %}">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="student">
+          <div class="form-grid">
+            <div class="common"></div>
+            <label>Profile picture</label>
+          <input type="file" accept="image/*" name="profile_picture">
+
+          <div class="row-span">
+            <label>Bio</label>
+            <textarea name="bio"></textarea>
+          </div>
+
+          <div class="row-span">
+            <label>LinkedIn</label>
+            <input type="url" name="linkedin">
+          </div>
+
+            <div><label>Department</label><input type="text" name="department"></div>
+            <div><label>Year</label><input type="text" name="year"></div>
+
+            <div><label>Enrollment number *</label><input type="text" name="enrollment_number" required></div>
+            <div><label>Branch</label><input type="text" name="branch"></div>
+
+            <div><label>Semester</label><input type="text" name="semester"></div>
+            <div><label>Section</label><input type="text" name="section"></div>
+
+            <div><label>CGPA</label><input type="number" step="0.01" name="cgpa"></div>
+            <div class="row-span"><label>Skills</label><textarea name="skills"></textarea></div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary">Save Student Profile</button>
+          </div>
+        </form>
+
+        <!-- ALUMNI FORM -->
+        <form id="alumni" method="POST" enctype="multipart/form-data" action="{% url 'unicircleapp:profileCreationpage' %}">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="alumni">
+          <div class="form-grid">
+            <div class="common"></div>
+            <label>Profile picture</label>
+          <input type="file" accept="image/*" name="profile_picture">
+
+          <div class="row-span">
+            <label>Bio</label>
+            <textarea name="bio"></textarea>
+          </div>
+
+          <div class="row-span">
+            <label>LinkedIn</label>
+            <input type="url" name="linkedin">
+          </div>
+            <div><label>Department</label><input type="text" name="department"></div>
+            <div><label>Year</label><input type="text" name="year"></div>
+
+            <div><label>Graduation year</label><input type="number" name="graduation_year"></div>
+            <div><label>Higher studies</label><input type="text" name="higher_studies"></div>
+
+            <div><label>Current position</label><input type="text" name="current_position"></div>
+            <div><label>Company</label><input type="text" name="company"></div>
+
+            <div><label>Industry</label><input type="text" name="industry"></div>
+            <div class="row-span"><label>Achievements</label><textarea name="achievements"></textarea></div>
+
+            <div><label>Mentoring interest</label>
+              <select name="mentoring_interest">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary">Save Alumni Profile</button>
+          </div>
+        </form>
+
+        <!-- FACULTY FORM -->
+        <form id="faculty" method="POST" enctype="multipart/form-data" action="{% url 'unicircleapp:profileCreationpage' %}">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="faculty">
+          <div class="form-grid">
+            <div class="common"></div>
+            <label>Profile picture</label>
+          <input type="file" accept="image/*" name="profile_picture">
+
+          <div class="row-span">
+            <label>Bio</label>
+            <textarea name="bio"></textarea>
+          </div>
+
+          <div class="row-span">
+            <label>LinkedIn</label>
+            <input type="url" name="linkedin">
+          </div>
+            <div><label>Department</label><input type="text" name="department"></div>
+            <div><label>Designation</label><input type="text" name="designation"></div>
+
+            <div><label>Years of experience</label><input type="number" name="years_of_experience"></div>
+            <div><label>Specialization</label><input type="text" name="specialization"></div>
+
+            <div class="row-span"><label>Classes taught</label><textarea name="classes_taught"></textarea></div>
+            <div class="row-span"><label>Publications</label><textarea name="publications"></textarea></div>
+            <div class="row-span"><label>Research interests</label><textarea name="research_interests"></textarea></div>
+
+            <div><label>Office hours</label><input type="text" name="office_hours"></div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary">Save Faculty Profile</button>
+          </div>
+        </form>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.target;
+        document.querySelectorAll('form').forEach(f => f.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+  </script>
+</body>
+</html>

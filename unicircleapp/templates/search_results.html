@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <h3>Search Results for "{{ query }}"</h3>
+  <hr>
+  {% if results %}
+    <ul class="list-group">
+      {% for user in results %}
+        <li class="list-group-item">
+          <a href="{% url 'unicircleapp:profile' user.id %}">{{ user.username }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No profiles found.</p>
+  {% endif %}
+</div>
+{% endblock %}

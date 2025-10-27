@@ -1,0 +1,258 @@
+/* Theme colors */
+.text-orangered {
+  color: orangered !important;
+}
+.btn-orangered {
+  background-color: orangered;
+  color: white;
+  border: none;
+  transition: 0.3s;
+}
+.btn-orangered:hover {
+  background-color: #e64500;
+}
+.btn-outline-orangered {
+  border: 1px solid orangered;
+  color: orangered;
+  transition: 0.3s;
+}
+.btn-outline-orangered:hover {
+  background-color: orangered;
+  color: white;
+}
+
+/* Posts container */
+.posts-area {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Post card */
+.post-main {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.post-main:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Post header */
+.post-header {
+  padding: 16px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+}
+.post-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid orangered;
+}
+.user-name {
+  font-weight: 600;
+  font-size: 0.95em;
+}
+.user-type {
+  font-size: 0.8em;
+  color: #666;
+}
+.post-date {
+  font-size: 0.75em;
+  color: #aaa;
+}
+.post-description {
+  font-size: 0.95em;
+  line-height: 1.6;
+  color: #333;
+}
+.post-title {
+  font-size: 1em;
+  font-weight: bold;
+  line-height: 1.6;
+  color: #333;
+}
+/* Post image */
+.post-image-container {
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+}
+.post-image-container img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.post-image-container img:hover {
+  transform: scale(1.03);
+}
+
+/* Interaction section */
+.post-interaction {
+  padding: 16px;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+.post-interaction h5 {
+  color: orangered;
+  font-size: 1em;
+}
+.post-interaction p {
+  margin: 4px 0;
+  font-size: 0.9em;
+}
+.post-interaction p b {
+  color: orangered;
+}
+
+/* Like button */
+.btn-like {
+  background: none;
+  border: none;
+  color: orangered;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-like i {
+  margin-right: 6px;
+}
+.btn-like:hover {
+  color: #e64500;
+}
+
+/* Comments */
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.comment-item {
+  background: #fff7f2; /* light offwhite with orange tint */
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.9em;
+  border: 1px solid #ffe2d4;
+}
+
+.comment-item b {
+  color: orangered;
+  margin-right: 4px;
+}
+
+/* Comment form */
+.post-interaction form textarea,
+.post-interaction form input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9em;
+  margin-bottom: 6px;
+}
+
+.post-interaction form textarea:focus,
+.post-interaction form input:focus {
+  border-color: orangered;
+  outline: none;
+}
+
+
+.post-interaction form button[type="submit"] {
+  background: orangered;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.post-interaction form button[type="submit"]:hover {
+  background: #e64500;
+}
+
+/* Create Post Section */
+.create-post-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.create-post-card h2 {
+  color: orangered;
+  font-size: 1.4em;
+  margin-bottom: 15px;
+}
+
+.create-post-card form p {
+  margin-bottom: 12px;
+}
+
+.create-post-card input[type="text"],
+.create-post-card textarea,
+.create-post-card input[type="file"] {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fdfdfd;
+  font-size: 0.95em;
+  transition: border-color 0.2s ease;
+}
+
+.create-post-card input:focus,
+.create-post-card textarea:focus {
+  border-color: orangered;
+  outline: none;
+}
+
+.create-post-card button {
+  background-color: orangered;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.create-post-card button:hover {
+  background-color: #e64500;
+}
+  .readmore-toggle {
+    background: none;
+    border: none;
+    color: #fd0d0d;
+    cursor: pointer;
+    font-size: 0.95rem;
+    text-decoration: underline;
+  }
+  .readmore-toggle:focus {
+    outline: 2px solid #ffe5bd;
+    outline-offset: 2px;
+  }

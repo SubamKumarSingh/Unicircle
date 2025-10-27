@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard — Orangered / Offwhite</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- AOS -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent: #ff4500; /* orangered */
+      --bg-off: #fff8f4; /* soft off-white */
+      --card: #fff; /* card background (slightly white) */
+      --muted: #6b6b6b;
+    }
+
+    body{ font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: linear-gradient(180deg,var(--bg-off), #fff); }
+
+    .accent-ring{ box-shadow: 0 6px 18px rgba(255,69,0,0.12); }
+
+    .card { border: 1px solid rgba(0,0,0,0.04); }
+
+    .icon-circle{ width:48px; height:48px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; background:linear-gradient(180deg, rgba(255,69,0,0.12), rgba(255,69,0,0.06)); }
+
+    .card:focus{ outline:3px solid rgba(255,69,0,0.18); outline-offset:3px; }
+
+  </style>
+</head>
+<body class="min-h-screen">
+  <script>document.documentElement.classList.add('aos-ready');</script>
+
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[var(--bg-off)] border-r p-6 hidden md:flex flex-col justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-[var(--accent)] mb-6">Admin Panel</h2>
+        <nav class="space-y-3">
+          <button id="nav-total-users" class="block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Total Users</button>
+          <button id="nav-pending" class="block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Pending Approvals</button>
+          <button id="nav-students" class="block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Students</button>
+          <button id="nav-alumni" class="block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Alumni</button>
+          <button id="nav-faculty" class="block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Faculty</button>
+        </nav>
+      </div>
+      <div class="space-y-2">
+        <button id="nav-settings" class="w-full p-3 text-left rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Settings</button>
+        <button id="nav-logout" class="w-full p-3 text-left rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 p-6 md:p-10">
+      <header class="max-w-6xl mx-auto mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">Admin Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-600">Overview — quick links to user management</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-sm text-gray-600">Signed in as <strong>Admin</strong></div>
+            <button id="top-settings" class="px-3 py-1 rounded-md text-sm bg-white card border">Settings</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-6xl mx-auto">
+        <section class="mb-6">
+          <div class="rounded-2xl p-6 card shadow-sm accent-ring" style="background: linear-gradient(90deg, rgba(255,69,0,0.06), rgba(255,69,0,0.02));">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-semibold">Welcome back — quick actions</h2>
+                <p class="text-sm text-gray-600">Tap any card to open the corresponding management page.</p>
+              </div>
+              <div class="text-right">
+                <div class="text-xs text-gray-500">Live snapshot</div>
+                <div id="last-updated" class="text-sm text-gray-700 font-medium">—</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cards grid -->
+        <section>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+
+            <!-- Total Users -->
+            <button id="card-total-users" class="card rounded-2xl p-5 text-left hover:translate-y-[-4px] transform transition shadow-sm focus:outline-none" data-aos="fade-up" aria-label="Total users">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-3">
+                    <div class="icon-circle" aria-hidden>
+                      <!-- users icon -->
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3z" fill="var(--accent)"/>
+                        <path d="M8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3z" fill="var(--accent)"/>
+                        <path d="M2 20c0-2.761 3.582-5 8-5s8 2.239 8 5v1H2v-1z" fill="rgba(0,0,0,0.06)"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-sm text-gray-500">Total users</div>
+                      <div id="total-users-count" class="text-2xl font-bold text-gray-900">0</div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </button>
+
+            <!-- Pending Approvals -->
+            <button id="card-pending" class="card rounded-2xl p-5 text-left hover:translate-y-[-4px] transform transition shadow-sm focus:outline-none" data-aos="fade-up" data-aos-delay="80" aria-label="Pending approvals">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-3">
+                    <div class="icon-circle" aria-hidden>
+                      <!-- clock / pending icon -->
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" fill="var(--accent)"/>
+                        <path d="M12.75 7h-1.5v6l5.25 3.15.75-1.23-4.5-2.67V7z" fill="#fff" opacity="0.9"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-sm text-gray-500">Pending approvals</div>
+                      <div id="pending-count" class="text-2xl font-bold text-gray-900">0</div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </button>
+
+            <!-- Students -->
+            <button id="card-students" class="card rounded-2xl p-5 text-left hover:translate-y-[-4px] transform transition shadow-sm focus:outline-none" data-aos="fade-up" data-aos-delay="160" aria-label="Students">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-3">
+                    <div class="icon-circle" aria-hidden>
+                      <!-- graduation hat -->
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3L2 9l10 6 10-6-10-6z" fill="var(--accent)"/>
+                        <path d="M12 13v8" stroke="rgba(0,0,0,0.12)" stroke-width="1.2" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-sm text-gray-500">Students</div>
+                      <div id="students-count" class="text-2xl font-bold text-gray-900">0</div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </button>
+
+            <!-- Alumni -->
+            <button id="card-alumni" class="card rounded-2xl p-5 text-left hover:translate-y-[-4px] transform transition shadow-sm focus:outline-none" data-aos="fade-up" data-aos-delay="240" aria-label="Alumni">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-3">
+                    <div class="icon-circle" aria-hidden>
+                      <!-- briefcase / alumni -->
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="7" width="18" height="12" rx="2" fill="var(--accent)"/>
+                        <path d="M8 7v-1a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1" fill="#fff" opacity="0.9"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-sm text-gray-500">Alumni</div>
+                      <div id="alumni-count" class="text-2xl font-bold text-gray-900">0</div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </button>
+
+            <!-- Faculty -->
+            <button id="card-faculty" class="card rounded-2xl p-5 text-left hover:translate-y-[-4px] transform transition shadow-sm focus:outline-none" data-aos="fade-up" data-aos-delay="320" aria-label="Faculty">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-3">
+                    <div class="icon-circle" aria-hidden>
+                      <!-- chalkboard / faculty -->
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 7h18v8H3z" fill="var(--accent)"/>
+                        <path d="M8 17v2h8v-2" stroke="rgba(0,0,0,0.12)" stroke-width="1.2" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="text-sm text-gray-500">Faculty</div>
+                      <div id="faculty-count" class="text-2xl font-bold text-gray-900">0</div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </button>
+
+          </div>
+        </section>
+
+        <section class="mt-8 text-sm text-gray-500">
+          <p>Tip: You can wire each card to a route like <code>/admin/users</code>, <code>/admin/approvals</code>, etc. The sample JS below demonstrates how to attach click handlers.</p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    AOS.init({ duration: 500, once: true });
+
+    // Demo counts (replace with real data fetch)
+    const data = {
+      total: 1248,
+      pending: 16,
+      students: 980,
+      alumni: 180,
+      faculty: 88
+    };
+
+    document.getElementById('total-users-count').textContent = data.total;
+    document.getElementById('pending-count').textContent = data.pending;
+    document.getElementById('students-count').textContent = data.students;
+    document.getElementById('alumni-count').textContent = data.alumni;
+    document.getElementById('faculty-count').textContent = data.faculty;
+
+    // Last updated timestamp
+    const now = new Date();
+    document.getElementById('last-updated').textContent = now.toLocaleString();
+
+
+
+  </script>
+</body>
+</html>

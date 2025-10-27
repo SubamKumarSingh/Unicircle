@@ -1,0 +1,681 @@
+{% extends 'homepage_base.html' %} 
+{% load static %} 
+{% block title%}Fundraisers{% endblock %} 
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'fundraisers_main.css' %}" />
+<script src="https://js.stripe.com/v3/"></script>
+
+<div class="wrapper">
+  <div class="top-row">
+    <!-- Left: list -->
+    <div>
+      <!-- Filter toolbar (place above the fundraiser-list) -->
+      <div class="fundraiser-toolbar" role="toolbar" aria-label="Fundraiser filters" style="
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        ">
+        <div style="display: flex; flex-direction: column">
+          <h3 style="color: var(--accent); margin: 0 0 6px 0">Fundraisers</h3>
+          <div class="small muted">Browse and manage fundraisers</div>
+        </div>
+
+        <div class="filters" role="tablist" aria-label="Filter fundraisers" style="margin-left: 18px">
+          <button class="filter-btn" data-filter="all" role="tab" aria-selected="true">
+            All
+          </button>
+          <button class="filter-btn" data-filter="active" role="tab" aria-selected="false">
+            Active
+          </button>
+          <button class="filter-btn" data-filter="completed" role="tab" aria-selected="false">
+            Completed
+          </button>
+          <button class="filter-btn" data-filter="closed" role="tab" aria-selected="false">
+            Closed
+          </button>
+        </div>
+
+        <div id="filter-count" style="margin-left: auto; font-size: 13px; color: var(--muted)">
+          Showing <span id="visible-count">0</span>/<span id="total-count">0</span>
+        </div>
+      </div>
+
+      <div class="fundraiser-list">
+        {% for fundraiser in fundraisers %}
+
+        <article class="fundraiser-card" role="article" aria-labelledby="f-{{ fundraiser.id }}" data-pk="{{ fundraiser.id }}" data-active="{{ fundraiser.active|yesno:'1,0' }}" data-completed="{{ fundraiser.completed|yesno:'1,0' }}">
+           <!-- Owner menu: three-dot (only show to owner) --> 
+            <div class="thumb"> 
+              {% if request.user.is_authenticated and request.user.id == fundraiser.owner_id %} 
+              <div class="card-menu"> 
+                <button class="menu-btn" aria-haspopup="true" aria-expanded="false" title="Options">⋯</button> 
+                <div class="menu-panel" role="menu" aria-hidden="true"> 
+                  {% if fundraiser.active %}
+                   <button class="menu-action" data-action="close" type="button" role="menuitem">Close fundraiser</button> 
+                   <button class="menu-action" data-action="complete" type="button" role="menuitem">Mark as completed</button> 
+                   {% else %} 
+                   <button class="menu-action" data-action="reopen" type="button" role="menuitem">Reopen fundraiser</button> 
+                   <button class="menu-action" data-action="complete" type="button" role="menuitem">Mark as completed</button> 
+                   {% endif %} 
+                  </div> 
+                </div> 
+                {% endif %} 
+                {% if fundraiser.image %} 
+                <img src="{{ fundraiser.image.url }}" alt="{{ fundraiser.title }} image"> 
+                {% else %} 
+                <!-- fallback svg --> 
+                 {% endif %} 
+                </div> 
+                <div> 
+                  <h4 id="f-{{ fundraiser.id }}">{{ fundraiser.title }}</h4> 
+                  <p>{{ fundraiser.description|truncatechars:140 }}</p> 
+                </div> 
+                <div class="meta-row"> 
+                  <div> 
+                    <div class="small">Raised: ₹{{ fundraiser.raised|default:0 }}</div> 
+                    <div class="goal">Goal: ₹{{ fundraiser.goal }}</div> 
+                  </div> 
+                  <div class="small">Created {{ fundraiser.created_at|date:"M d, Y" }}</div> 
+                </div> 
+                <div class="progress" aria-hidden="true" data-raised="{{ fundraiser.raised|default:0 }}" data-goal="{{ fundraiser.goal }}"> 
+                  <i></i>
+                 </div> 
+                 <div class="donate-row"> 
+                  <!-- donation form: hide/disable if inactive/completed --> 
+                   {% if fundraiser.active %} 
+                   <form class="donate-form" data-id="{{ fundraiser.id }}"> 
+                    {% csrf_token %} 
+                    <input type="number" name="amount" placeholder="₹100" required min="1" class="donation-input"> 
+                    <button type="submit" class="donate-btn">Donate</button> 
+                  </form> 
+                  {% else %}
+                   <!-- Disabled state --> 
+                    <div class="donation-disabled"> 
+                      <div class="muted"> 
+                        {% if fundraiser.completed %}
+                        Completed
+                        {% else %}
+                        Closed
+                        {% endif %} 
+                      </div> 
+                    </div> 
+                    {% endif %} 
+                    <div style="margin-left:auto; font-size:13px; color:var(--muted);">
+                      {{ fundraiser.donors_count|default:0 }} supporters</div> 
+                    </div> 
+                    <!-- optional overlay for additional visual grayout when inactive --> 
+                     {% if not fundraiser.active %} 
+                     <div class="inactive-overlay" aria-hidden="true">
+
+                     </div>
+                      {% endif %} 
+                    </article>
+
+        {% empty %}
+        <p class="no-fundraisers">No fundraisers created yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right: create form -->
+    <aside class="fundraiser-form" aria-labelledby="create-fund">
+      <h3 id="create-fund">Create a Fundraiser</h3>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-grid">
+          <div class="control">
+            <label for="title" class="muted">Title</label>
+            <input id="title" type="text" name="title" placeholder="Fundraiser title" required />
+          </div>
+
+          <div class="control">
+            <label for="goal" class="muted">Goal (₹)</label>
+            <input id="goal" type="number" name="goal" placeholder="e.g. 50000" required min="1" />
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="description" class="muted">Description</label>
+          <textarea id="description" name="description" rows="5" placeholder="Tell donors why this matters..."
+            required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px">
+          <div class="file-input">
+            <div class="btn" role="button" tabindex="0">
+              Upload image (optional)
+            </div>
+            <input type="file" name="image" id="image" accept="image/*" />
+          </div>
+
+          <div style="flex: 1; font-size: 13px; color: var(--muted)">
+            Supported: JPG, PNG. Max 5MB.
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" type="submit">Create Fundraiser</button>
+          <button class="btn-ghost" type="reset">Clear</button>
+        </div>
+
+        <div id="preview" style="margin-top: 12px; display: none">
+          <div style="font-size: 13px; color: var(--muted)">Preview</div>
+          <div style="
+              margin-top: 8px;
+              border-radius: 10px;
+              overflow: hidden;
+              border: 1px solid rgba(0, 0, 0, 0.04);
+            ">
+            <img id="preview-img" src="" style="
+                width: 100%;
+                height: 160px;
+                object-fit: cover;
+                display: block;
+              " alt="preview" />
+          </div>
+        </div>
+      </form>
+    </aside>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // --------- minimal safe toast fallback (in case CSS/script toast creation missing) ----------
+    function ensureToastContainer() {
+      let c = document.querySelector(".toast-ctn");
+      if (!c) {
+        c = document.createElement("div");
+        c.className = "toast-ctn";
+        document.body.appendChild(c);
+      }
+      return c;
+    }
+    function createToast({
+      title = "",
+      message = "",
+      type = "info",
+      duration = 3500,
+    }) {
+      try {
+        const c = ensureToastContainer();
+        const node = document.createElement("div");
+        node.className = "toast " + type;
+        node.innerHTML = `<div class="icon">${type === "success" ? "✓" : type === "error" ? "!" : "i"
+          }</div>
+        <div class="body"><div class="title">${title || ""
+          }</div><div class="msg">${message || ""}</div></div>
+        <button class="close" aria-label="Close">&times;</button>`;
+        c.appendChild(node);
+        node.querySelector(".close").addEventListener("click", () => {
+          node.classList.remove("show");
+          setTimeout(() => node.remove(), 220);
+        });
+        requestAnimationFrame(() => node.classList.add("show"));
+        if (duration > 0)
+          setTimeout(() => {
+            node.classList.remove("show");
+            setTimeout(() => node.remove(), 220);
+          }, duration);
+        return node;
+      } catch (err) {
+        console.error("toast error", err);
+        // last resort alert
+        try {
+          if (type === "error") alert("Error: " + message);
+          else alert(message);
+        } catch (e) { }
+      }
+    }
+    const toast = {
+      info: (t, m) => createToast({ title: t, message: m, type: "info" }),
+      success: (t, m) => createToast({ title: t, message: m, type: "success" }),
+      error: (t, m) => createToast({ title: t, message: m, type: "error" }),
+    };
+
+    // --------- small helpers ----------
+    const log = (...args) => {
+      console.debug("[fundraisers]", ...args);
+    };
+    const qsa = (sel, ctx = document) =>
+      Array.from((ctx || document).querySelectorAll(sel));
+    const qs = (sel, ctx = document) => (ctx || document).querySelector(sel);
+    function getCookie(name) {
+      const v = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+      return v ? v.pop() : "";
+    }
+
+    // Wait for DOM ready
+    document.addEventListener("DOMContentLoaded", function () {
+      log("DOM ready - initializing fundraisers script");
+
+      // Debug: counts of key elements
+      try {
+        const counts = {
+          filterBtns: qsa(".filter-btn").length,
+          cards: qsa(".fundraiser-card").length,
+          donateForms: qsa(".donate-form").length,
+          menuContainers: qsa(".card-menu").length,
+        };
+        log("element counts", counts);
+        // show a tiny startup toast (comment out if noisy)
+        // toast.info('Fundraisers loaded','Found ' + counts.cards + ' cards');
+      } catch (e) {
+        console.error("debug counts failed", e);
+      }
+
+      // ---------- image preview ----------
+      try {
+        const file = qs("#image");
+        const preview = qs("#preview");
+        const previewImg = qs("#preview-img");
+        if (file && preview && previewImg) {
+          file.addEventListener("change", () => {
+            const f = file.files && file.files[0];
+            if (!f) {
+              preview.style.display = "none";
+              previewImg.src = "";
+              return;
+            }
+            if (f.size > 5 * 1024 * 1024) {
+              toast.error("Image too large", "Max 5MB");
+              file.value = "";
+              preview.style.display = "none";
+              return;
+            }
+            previewImg.src = URL.createObjectURL(f);
+            preview.style.display = "block";
+          });
+          log("image preview attached");
+        } else {
+          log("image preview: required elements not found (skipping)");
+        }
+      } catch (err) {
+        console.error("image preview error", err);
+        toast.error("Error", "Image preview failed");
+      }
+
+      // ---------- progress bars ----------
+      function updateProgress(card) {
+        try {
+          const prog = card.querySelector(".progress");
+          if (!prog) return;
+          const raised = Number(prog.dataset.raised || 0);
+          const goal = Number(prog.dataset.goal || 1) || 1;
+          const pct = Math.min(100, Math.round((raised / goal) * 100));
+          const bar = prog.querySelector("i");
+          if (bar) bar.style.width = pct + "%";
+          prog.setAttribute("aria-valuenow", pct);
+          // update or add percent label
+          let lbl = card.querySelector(".progress-percent");
+          if (!lbl) {
+            lbl = document.createElement("div");
+            lbl.className = "progress-percent small";
+            lbl.style.marginTop = "6px";
+            prog.after(lbl);
+          }
+          lbl.textContent = pct + "%";
+        } catch (e) {
+          console.error("updateProgress error", e);
+        }
+      }
+      try {
+        qsa(".fundraiser-card").forEach(updateProgress);
+        log("progress initialized");
+      } catch (e) {
+        console.error(e);
+      }
+
+      // ---------- filters (client-side) ----------
+      try {
+        const filterBtns = qsa(".filter-btn");
+        const cards = qsa(".fundraiser-card");
+        const visibleCountEl = qs("#visible-count");
+        const totalCountEl = qs("#total-count");
+        const FILTER_KEY = "fundraiser_filter_selection";
+
+        function countAndShow() {
+          const total = cards.length;
+          let visible = 0;
+          cards.forEach((c) => {
+            if (!c.classList.contains("hidden")) visible++;
+          });
+          if (visibleCountEl) visibleCountEl.textContent = visible;
+          if (totalCountEl) totalCountEl.textContent = total;
+        }
+
+        function applyFilter(name) {
+          cards.forEach((card) => {
+            const active = String(card.dataset.active || "0");
+            const completed = String(card.dataset.completed || "0");
+            let hide = false;
+
+            switch (name) {
+              case "active":
+                if (active !== "1") hide = true;
+                break;
+              case "completed":
+                if (completed !== "1") hide = true;
+                break;
+              case "closed":
+                if (active === "1" || completed === "1") hide = true;
+                break;
+              case "all":
+              default:
+                hide = false;
+            }
+
+            card.classList.toggle("hidden", hide);
+          });
+
+          // update filter button state
+          filterBtns.forEach((btn) => {
+            const sel = btn.dataset.filter === name;
+            btn.classList.toggle("active", sel);
+            btn.setAttribute("aria-selected", sel ? "true" : "false");
+          });
+
+          // store last selection
+          try {
+            sessionStorage.setItem(FILTER_KEY, name);
+          } catch (e) { }
+          countAndShow();
+        }
+
+        filterBtns.forEach((btn) =>
+          btn.addEventListener("click", () =>
+            applyFilter(btn.dataset.filter || "all")
+          )
+        );
+        const last =
+          sessionStorage.getItem("fundraiser_filter_selection") || "active";
+        applyFilter(
+          ["all", "active", "completed", "closed"].includes(last) ? last : "all"
+        );
+        log("filters attached");
+      } catch (err) {
+        console.error("filters init error", err);
+        toast.error("Error", "Filters failed to initialize");
+      }
+
+      // ---------- menu open/close handling ----------
+      try {
+        qsa(".card-menu").forEach((menu) => {
+          const btn = menu.querySelector(".menu-btn");
+          const panel = menu.querySelector(".menu-panel");
+          if (!btn || !panel) return;
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const shown = panel.classList.toggle("show");
+            btn.setAttribute("aria-expanded", shown ? "true" : "false");
+            qsa(".card-menu .menu-panel").forEach((p) => {
+              if (p !== panel) p.classList.remove("show");
+            });
+          });
+        });
+        document.addEventListener("click", () =>
+          qsa(".card-menu .menu-panel").forEach((p) =>
+            p.classList.remove("show")
+          )
+        );
+        log("menus attached");
+      } catch (e) {
+        console.error("menus error", e);
+      }
+
+      // ---------- menu actions & donate handling (delegated) ----------
+      try {
+        document.addEventListener("click", async function (e) {
+          // menu actions
+          const actionBtn =
+            e.target.closest && e.target.closest(".menu-action")
+              ? e.target.closest(".menu-action")
+              : null;
+          if (actionBtn) {
+            e.stopPropagation();
+            const card = actionBtn.closest(".fundraiser-card");
+            if (!card) {
+              toast.error("Internal error", "Card not found");
+              return;
+            }
+            const pk = card.dataset.pk;
+            const action = actionBtn.dataset.action;
+            if (!pk || !action) {
+              toast.error("Internal error", "Missing action or id");
+              return;
+            }
+            let confirmMsg = "";
+            if (action === "close")
+              confirmMsg = "Close this fundraiser? Donations disabled.";
+            if (action === "complete")
+              confirmMsg = "Mark as completed? Donations disabled.";
+            if (action === "reopen")
+              confirmMsg = "Reopen this fundraiser? Donations enabled.";
+            if (confirmMsg && !confirm(confirmMsg)) return;
+
+            const endpoint = `/fundraisers/${pk}/${action === "reopen" ? "open" : action
+              }/`;
+            if (actionBtn.dataset.busy === "1") return;
+            actionBtn.dataset.busy = "1";
+            try {
+              const resp = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  Accept: "application/json",
+                },
+              });
+              const data = await resp
+                .json()
+                .catch(() => ({ error: "invalid_json" }));
+              if (!resp.ok || data.error) {
+                toast.error("Action failed", data.error || "Server error");
+                return;
+              }
+              const act = data.action || action;
+              if (act === "closed" || action === "close") {
+                // closed
+                // visually disable donations
+                if (card) {
+                  card.dataset.active = "0";
+                  const donate = card.querySelector(".donate-row");
+                  if (donate) {
+                    const dd = document.createElement("div");
+                    dd.className = "donation-disabled";
+                    dd.innerHTML = '<div class="muted">Closed</div>';
+                    donate.insertBefore(dd, donate.firstChild);
+                  }
+                }
+                toast.info("Fundraiser closed");
+              } else if (act === "completed" || action === "complete") {
+                if (card) {
+                  card.dataset.active = "0";
+                  card.dataset.completed = "1";
+                  const donate = card.querySelector(".donate-row");
+                  if (donate) {
+                    const dd = document.createElement("div");
+                    dd.className = "donation-disabled";
+                    dd.innerHTML = '<div class="muted">Completed</div>';
+                    donate.insertBefore(dd, donate.firstChild);
+                  }
+                }
+                toast.success("Fundraiser marked completed");
+              } else if (
+                act === "reopened" ||
+                action === "reopen" ||
+                act === "open"
+              ) {
+                // reload for safety (so form tokens are correct)
+                window.location.reload();
+              } else {
+                window.location.reload();
+              }
+            } catch (err) {
+              console.error("menu action error", err);
+              toast.error("Network error", "Try again");
+            } finally {
+              actionBtn.dataset.busy = "0";
+              qsa(".card-menu .menu-panel").forEach((p) =>
+                p.classList.remove("show")
+              );
+            }
+          }
+        });
+
+        document.addEventListener("submit", async function (e) {
+          const form =
+            e.target.closest && e.target.closest(".donate-form")
+              ? e.target.closest(".donate-form")
+              : null;
+          if (!form) return;
+          e.preventDefault();
+
+          if (form.dataset.submitting === "1") return;
+          form.dataset.submitting = "1";
+
+          const submitBtn = form.querySelector(
+            'button[type="submit"], .donate-btn'
+          );
+          const controls = Array.from(
+            form.querySelectorAll("input,textarea,select,button")
+          );
+          if (submitBtn) submitBtn.disabled = true;
+          controls.forEach((c) => {
+            if (c !== submitBtn) c.disabled = true;
+          });
+
+          const id = form.dataset.id;
+          if (!id) {
+            toast.error("Internal error", "Missing fundraiser id");
+            form.dataset.submitting = "0";
+            if (submitBtn) submitBtn.disabled = false;
+            controls.forEach((c) => (c.disabled = false));
+            return;
+          }
+
+          // sanitize amount
+          const amountInput = form.querySelector(
+            'input[name="amount"], input[name="donation_amount"]'
+          );
+          if (!amountInput) {
+            toast.error("Amount input missing");
+            form.dataset.submitting = "0";
+            if (submitBtn) submitBtn.disabled = false;
+            controls.forEach((c) => (c.disabled = false));
+            return;
+          }
+          let raw = (amountInput.value || "").toString().trim();
+          raw = raw.replace(/₹|\$|€|£|,|\s/g, "");
+          if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
+            toast.error("Enter a valid amount (e.g. 500 or 500.00)");
+            form.dataset.submitting = "0";
+            if (submitBtn) submitBtn.disabled = false;
+            controls.forEach((c) => (c.disabled = false));
+            return;
+          }
+
+          const fd = new FormData(form);
+          fd.set("amount", raw);
+          if (!fd.get("csrfmiddlewaretoken")) {
+            const tok = getCookie("csrftoken");
+            if (tok) fd.append("csrfmiddlewaretoken", tok);
+          }
+
+          try {
+            // const resp = await fetch(`/fundraisers/${id}/donate/`, { method:'POST', headers:{ 'X-CSRFToken': getCookie('csrftoken') }, body: fd });
+            // const data = await resp.json().catch(()=>({error:'invalid_json'}));
+            // if(resp.ok && data.ok && data.status === 'succeeded'){
+            //   toast.success('Donation recorded','Thank you!');
+            //   // update progress if server returned raised value
+            //   const card = document.querySelector(`.fundraiser-card[data-pk="${id}"]`);
+            //   if(card && typeof data.raised !== 'undefined'){ const prog = card.querySelector('.progress'); if(prog){ prog.dataset.raised = data.raised; updateProgress(card); } }
+            //   else { window.location.reload(); }
+            // } else if(resp.ok && data.ok && data.status === 'pending'){
+            //   toast.info(data.message || 'Donation pending');
+            //   if(data.redirect) window.location = data.redirect; else window.location.reload();
+            // } else {
+            //   toast.error('Donation failed', data.message || data.error || 'Try again');
+            // }
+            // inside your donate submit handler (after creating 'fd' and posting to your endpoint)
+            const resp = await fetch(
+              `/fundraisers/${id}/create-checkout-session/`,
+              {
+                method: "POST",
+                headers: { "X-CSRFToken": getCookie("csrftoken") },
+                body: fd,
+              }
+            );
+            const data = await resp.json();
+            if (!resp.ok || !data.ok) {
+              toast.error(
+                "Payment initialization failed",
+                data.error || "Try again"
+              );
+            } else {
+              const stripe = Stripe(data.publishableKey); // stripe.js frontend instance
+              stripe
+                .redirectToCheckout({ sessionId: data.sessionId })
+                .then((result) => {
+                  if (result.error) {
+                    toast.error(
+                      "Stripe error",
+                      result.error.message || "Checkout failed"
+                    );
+                  }
+                });
+            }
+          } catch (err) {
+            console.error("donate submit error", err);
+            toast.error("Network error", "Try again");
+          } finally {
+            form.dataset.submitting = "0";
+            if (submitBtn) submitBtn.disabled = false;
+            controls.forEach((c) => (c.disabled = false));
+          }
+        });
+
+        log("delegated menu & donate handlers attached");
+      } catch (err) {
+        console.error("delegated handlers init error", err);
+        toast.error("Error", "Interaction handlers failed to attach");
+      }
+
+      // expose small helpers
+      window.fundraisers = window.fundraisers || {};
+      window.fundraisers.updateProgress = function (pk, raised) {
+        try {
+          const card = document.querySelector(
+            `.fundraiser-card[data-pk="${pk}"]`
+          );
+          if (card) {
+            const prog = card.querySelector(".progress");
+            if (prog) {
+              prog.dataset.raised = raised;
+              updateProgress(card);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+    }); // end DOMContentLoaded
+
+    // global error fallback
+    window.addEventListener("error", function (ev) {
+      console.error("Global error", ev.error || ev);
+      try {
+        toast.error("A script error occurred", "See console");
+      } catch (e) { }
+    });
+    window.addEventListener("unhandledrejection", function (ev) {
+      console.error("Promise rejection", ev.reason);
+      try {
+        toast.error("Background error", "See console");
+      } catch (e) { }
+    });
+  })();
+</script>
+
+{% endblock %}

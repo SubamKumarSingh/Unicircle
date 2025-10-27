@@ -1,0 +1,113 @@
+<!-- templates/base.html -->
+{% load active_link_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+     <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- AOS -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent: #ff4500; /* orangered */
+      --bg-off: #fff8f4; /* soft off-white */
+      --card: #fff; /* card background (slightly white) */
+      --muted: #6b6b6b;
+    }
+
+    body{ font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: linear-gradient(180deg,var(--bg-off), #fff); }
+
+    .accent-ring{ box-shadow: 0 6px 18px rgba(255,69,0,0.12); }
+
+    .card { border: 1px solid rgba(0,0,0,0.04); }
+
+    .icon-circle{ width:48px; height:48px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; background:linear-gradient(180deg, rgba(255,69,0,0.12), rgba(255,69,0,0.06)); }
+
+    .card:focus{ outline:3px solid rgba(255,69,0,0.18); outline-offset:3px; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+        }
+        .sidebar a {
+            color: white;
+            display: block;
+            padding: 15px;
+            text-decoration: none;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .active_link{
+            background-color: orangered;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+  <script>document.documentElement.classList.add('aos-ready');</script>
+  <div class="flex min-h-screen">
+      <aside class="w-64 bg-[var(--bg-off)] border-r p-6 hidden md:flex flex-col justify-between">
+          <div>
+              <h2 class="text-xl font-bold text-[var(--accent)] mb-6"><a href="{% url 'unicircleapp:admin_dashboard_page' %}">Admin Panel</a></h2>
+              <nav class="space-y-3">
+                  <a id="nav-total-users" href="{% url 'unicircleapp:admin_allusers_page' %}" 
+                    class="{% active_link 'unicircleapp:admin_allusers_page' 'active_link' %} block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Total Users</a>
+                  <a id="nav-pending" href="{% url 'unicircleapp:admin_approvals_page' %}"    
+                    class="{% active_link 'unicircleapp:admin_approvals_page' 'active_link' %} block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Pending Approvals</a>
+                  <a id="nav-students" href="{% url 'unicircleapp:admin_students_page' %}" 
+                    class="{% active_link 'unicircleapp:admin_students_page' 'active_link' %} block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Students</a>
+                  <a id="nav-alumni" href="{% url 'unicircleapp:admin_alumni_page' %}" 
+                    class="{% active_link 'unicircleapp:admin_alumni_page' 'active_link' %} block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Alumni</a>
+                  <a id="nav-faculty" href="{% url 'unicircleapp:admin_faculty_page' %}" 
+                    class="{% active_link 'unicircleapp:admin_faculty_page' 'active_link' %} block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Faculty</a>
+                  <a id="nav-faculty" href="{% url 'unicircleapp:admin_view_posts_page' %}" 
+                    class="{% active_link 'unicircleapp:admin_view_posts_page' 'active_link' %} block w-full text-left p-3 rounded-lg hover:bg-[var(--accent)] hover:text-white transition">View All Posts</a>
+                  </nav>
+            </div>
+            <div class="space-y-2">
+                <a id="nav-settings" href="{% url 'unicircleapp:admin_settings_page' %}" class="w-full p-3 text-left rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Settings</a>
+                <a id="nav-logout" href="{% url 'unicircleapp:logoutpage' %}" class="w-full p-3 text-left rounded-lg hover:bg-[var(--accent)] hover:text-white transition">Logout</a>
+            </div>
+        </aside>
+        <div class="flex-1 p-6 md:p-10">
+                  <header class="max-w-6xl mx-auto mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">Admin Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-600">Overview — quick links to user management</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-sm text-gray-600">Signed in as <strong>Admin</strong></div>
+            <button id="top-settings" class="px-3 py-1 rounded-md text-sm bg-white card border">Settings</button>
+          </div>
+        </div>
+      </header>
+    
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+    </div>
+</div>
+</body>
+</html>

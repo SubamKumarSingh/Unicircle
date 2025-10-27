@@ -1,0 +1,328 @@
+{% load static %}
+{% load active_link_tags %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<link rel="stylesheet" href="{% static 'nav_bar.css' %}" />
+<nav class="navbar navbar-expand-lg sticky-top border-bottom" id="nav_bar">
+  <div class="container-fluid px-md-5">
+    <a class="navbar-brand" href="#"><img src="{% static 'images/unicircle.png' %}" alt="" height="60px"
+        id="nav_img" /></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler"><i class="fa-solid fa-bars"></i></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end text-center pe-3" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item" id="nav_a1">
+          <a class="{% active_link 'unicircleapp:dashboardpage' 'active' %} nav-link " href="{% url 'unicircleapp:dashboardpage'%}">Home</a>
+        </li>
+        <li class="nav-item" id="nav_a2">
+          <a class="{% active_link 'unicircleapp:user_view_profile_page' 'active' %} nav-link" href="{% url 'unicircleapp:user_view_profile_page' user.username %}">Profile</a>
+        </li>
+        <li class="nav-item" id="nav_a3">
+          <a class="{% active_link 'unicircleapp:chat_page' 'active' %} nav-link" href="{% url 'chat:chat_page' %}">
+            Messages <span id="nav-chat-unread" class="badge bg-danger" style="display:none; margin-left:6px;"></span>
+          </a>
+        </li>
+        <li class="nav-item d-flex align-items-center position-relative" id="nav_search">
+          <form class="d-flex w-100" id="searchForm" action="{% url 'unicircleapp:search_results' %}" method="get">
+            <input class="form-control me-2" type="search" placeholder="Search profiles..." aria-label="Search" name="q"
+              id="searchInput" autocomplete="off" />
+            <button class="btn btn-outline-primary" type="submit">
+              Search
+            </button>
+          </form>
+
+          <!-- Suggestions (positioned absolutely relative to li) -->
+          <div id="searchSuggestions" class="dropdown-menu mt-1" style="
+              display: none;
+              position: absolute;
+              top: 100%;
+              left: 0;
+              width: 100%;
+              z-index: 1050;
+              max-height: 300px;
+              overflow-y: auto;
+            "></div>
+        </li>
+        <li class="nav-item" id="nav_a4">
+          <a class="{% active_link 'unicircleapp:allfundraiserspage' 'active' %} nav-link" href="{% url 'fundraisers:allfundraiserspage' %}">Fundraisers</a>
+        </li>
+
+        <li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Settings
+  </a>
+  <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
+    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
+    <!-- <li><a class="dropdown-item" href="/account/delete-account/">Delete Account</a></li> -->
+    <li>
+  <button id="deleteAccountBtn" type="button" class="dropdown-item text-danger">
+    Delete account
+  </button>
+</li>
+    <li><a class="dropdown-item" href="{% url 'unicircleapp:logoutpage' %}">Logout</a></li>
+  </ul>
+</li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<!-- Change Password Modal -->
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="changePasswordForm" action="{% url 'unicircleapp:change_password' %}" method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="currentPassword" class="form-label">Current Password</label>
+    <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+  </div>
+  <div class="mb-3">
+    <label for="newPassword1" class="form-label">New Password</label>
+    <input type="password" class="form-control" id="newPassword1" name="new_password" required>
+  </div>
+  <div class="mb-3">
+    <label for="newPassword2" class="form-label">Confirm New Password</label>
+    <input type="password" class="form-control" id="newPassword2" name="new_password_conf" required>
+  </div>
+  <div id="changePasswordError" class="text-danger mb-2" style="display:none;"></div>
+  <div id="changePasswordSuccess" class="text-success mb-2" style="display:none;"></div>
+  <button class="btn btn-primary">Change Password</button>
+</form>
+<button class="btn btn-link mt-2" id="forgot-password-btn">Forgot Password?</button>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function waitForJQuery(next) {
+  if (window.jQuery) return next();
+  setTimeout(() => waitForJQuery(next), 20);
+})(function() {
+  const $ = window.jQuery;
+
+  // ---------------- CSRF setup ----------------
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie) {
+      document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) cookieValue = decodeURIComponent(c.substring(name.length + 1));
+      });
+    }
+    return cookieValue;
+  };
+  const csrftoken = getCookie('csrftoken');
+  $.ajaxSetup({ beforeSend: (xhr, settings) => {
+    if (!/^GET|HEAD|OPTIONS|TRACE$/i.test(settings.type) && !this.crossDomain) {
+      xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    }
+  }});
+
+  // ---------------- Unread badge polling ----------------
+  const updateUnreadBadges = (data = {}) => {
+    const total = Number(data.total_unread_senders || 0);
+    const navBadge = $('#nav-chat-unread');
+    if (navBadge.length) {
+      navBadge.toggle(total > 0).text(total > 0 ? total : '0');
+    }
+    (data.per_user || []).forEach(u => {
+      const badge = $(`.user-unread-badge[data-username="${u.username}"]`);
+      badge.toggle(u.unread_count > 0).text(u.unread_count || '');
+    });
+  };
+  const fetchUnreadSummary = () => $.get('/chats/unread_summary/').done(updateUnreadBadges);
+  let unreadPollHandle = null;
+  const startUnreadPolling = () => {
+    if (unreadPollHandle) clearInterval(unreadPollHandle);
+    fetchUnreadSummary();
+    unreadPollHandle = setInterval(fetchUnreadSummary, 3000);
+  };
+
+  // ---------------- Change Password AJAX ----------------
+  const clearChangePasswordErrors = () => {
+    $('#changePasswordError, #changePasswordSuccess').hide().text('');
+    $('#changePasswordForm .is-invalid').removeClass('is-invalid');
+    $('#changePasswordForm .invalid-feedback').remove();
+  };
+  const showFieldError = ($input, msg) => {
+    if (!$input.length) return;
+    $input.addClass('is-invalid').next('.invalid-feedback').remove();
+    $input.after(`<div class="invalid-feedback">${msg}</div>`);
+  };
+
+  $(document).on('submit', '#changePasswordForm', function(e) {
+  e.preventDefault();  // <- stops normal POST
+  const $form = $(this);
+  const action = $form.attr('action');
+  const formData = new FormData(this);
+  const $submit = $form.find('button[type="submit"]');
+
+  // clear previous messages
+  $('#changePasswordError').hide().text('');
+  $('#changePasswordSuccess').hide().text('');
+  $form.find('.is-invalid').removeClass('is-invalid');
+  $form.find('.invalid-feedback').remove();
+
+  // disable submit while processing
+  $submit.prop('disabled', true).text('Processing…');
+
+  $.ajax({
+    url: action,
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false,
+    success: function(resp) {
+      $submit.prop('disabled', false).text('Change Password');
+
+      if (resp && resp.success) {
+        $('#changePasswordSuccess').text(resp.message || 'Password changed successfully.').show();
+        $form[0].reset();
+
+        setTimeout(function() {
+          var modalEl = document.getElementById('changePasswordModal');
+          var bsModal = bootstrap.Modal.getInstance(modalEl);
+          if (bsModal) bsModal.hide();
+        }, 900);
+        return;
+      }
+
+      $('#changePasswordError').text('Unexpected server response.').show();
+    },
+    error: function(xhr) {
+      $submit.prop('disabled', false).text('Change Password');
+      let json = null;
+      try { json = JSON.parse(xhr.responseText); } catch(e){ json = xhr.responseJSON || null; }
+
+      if (json && json.errors) {
+        if (json.errors.current_password) {
+          $('#currentPassword').addClass('is-invalid').after('<div class="invalid-feedback">' + json.errors.current_password.join(' ') + '</div>');
+        }
+        if (json.errors.new_password) {
+          $('#newPassword1').addClass('is-invalid').after('<div class="invalid-feedback">' + json.errors.new_password.join(' ') + '</div>');
+        }
+        if (json.errors.new_password_conf) {
+          $('#newPassword2').addClass('is-invalid').after('<div class="invalid-feedback">' + json.errors.new_password_conf.join(' ') + '</div>');
+        }
+        const nonField = json.errors.__all__ || json.errors.non_field_errors || json.errors.nonFieldErrors;
+        if (nonField) $('#changePasswordError').text(nonField.join ? nonField.join(' ') : String(nonField)).show();
+        return;
+      }
+
+      $('#changePasswordError').text(xhr.responseText || 'An error occurred.').show();
+    }
+  });
+});
+
+// ---------------- Forgot Password toggle ----------------
+$(document).on('click', '#forgot-password-btn', function () {
+  const modalTitle = $('#changePasswordModalLabel');
+  const modalBody = $('.modal-body');
+
+  modalTitle.text('Forgot Password');
+
+  modalBody.html(`
+    <form id="forgotPasswordForm" action="{% url 'unicircleapp:forgot_password' %}" method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="forgotEmail" class="form-label">Enter your registered email</label>
+        <input type="email" class="form-control" id="forgotEmail" name="email" required>
+      </div>
+      <div id="forgotPasswordError" class="text-danger mb-2" style="display:none;"></div>
+      <div id="forgotPasswordSuccess" class="text-success mb-2" style="display:none;"></div>
+      <button type="submit" class="btn btn-primary w-100" id="forgot-button">Send New Password</button>
+    </form>
+    <button class="btn btn-link mt-3" id="back-to-change">Back to Change Password</button>
+  `);
+});
+
+// ---------------- Back to Change Password ----------------
+$(document).on('click', '#back-to-change', function () {
+  const modalTitle = $('#changePasswordModalLabel');
+  const modalBody = $('.modal-body');
+
+  modalTitle.text('Change Password');
+  modalBody.html(`
+    <form id="changePasswordForm" action="{% url 'unicircleapp:change_password' %}" method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="currentPassword" class="form-label">Current Password</label>
+        <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+      </div>
+      <div class="mb-3">
+        <label for="newPassword1" class="form-label">New Password</label>
+        <input type="password" class="form-control" id="newPassword1" name="new_password" required>
+      </div>
+      <div class="mb-3">
+        <label for="newPassword2" class="form-label">Confirm New Password</label>
+        <input type="password" class="form-control" id="newPassword2" name="new_password_conf" required>
+      </div>
+      <div id="changePasswordError" class="text-danger mb-2" style="display:none;"></div>
+      <div id="changePasswordSuccess" class="text-success mb-2" style="display:none;"></div>
+      <button class="btn btn-primary w-100">Change Password</button>
+    </form>
+    <button class="btn btn-link mt-2" id="forgot-password-btn">Forgot Password?</button>
+  `);
+});
+
+// ---------------- Forgot Password AJAX ----------------
+$(document).on('submit', '#forgotPasswordForm', function (e) {
+  e.preventDefault();
+
+  const $form = $(this);
+  const $submit = $('#forgot-button');
+  const $error = $('#forgotPasswordError');
+  const $success = $('#forgotPasswordSuccess');
+  const formData = new FormData(this);
+
+  $error.hide().text('');
+  $success.hide().text('');
+  $submit.prop('disabled', true).text('Processing...');
+
+  $.ajax({
+    url: $form.attr('action'),
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false,
+    success: function (resp) {
+      $submit.prop('disabled', false).text('Send New Password');
+      if (resp.success) {
+        $success.text(resp.message || 'A new password has been sent to your email.').show();
+        $form[0].reset();
+      } else if (resp.error) {
+        $error.text(resp.error).show();
+      }
+    },
+    error: function (xhr) {
+      $submit.prop('disabled', false).text('Send New Password');
+      let msg = 'An error occurred.';
+      try {
+        const json = JSON.parse(xhr.responseText);
+        msg = json.error || msg;
+      } catch (e) {}
+      $error.text(msg).show();
+    }
+  });
+});
+
+  // ---------------- DOM ready ----------------
+  $(document).ready(() => startUnreadPolling());
+});
+</script>
+
+
