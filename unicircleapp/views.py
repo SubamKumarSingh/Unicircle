@@ -83,7 +83,8 @@ def landing(request):
             form = LoginForm(request.POST)
             adm_username = request.POST.get("login_username").strip()
             adm_password = request.POST.get("login_password").strip()
-            if adm_username == "superuser" and adm_password == "mypass":
+            get_adm_pass = settings.ADMIN_PASSWORD or "mypass"
+            if adm_username == "superuser" and adm_password == get_adm_pass:
                     request.session['is_admin'] = True
                     return redirect('unicircleapp:admin_dashboard_page')
             if form.is_valid():

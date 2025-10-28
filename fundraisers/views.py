@@ -22,13 +22,14 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 @require_POST
 def create_checkout_session(request, pk):
-
     fundraiser = get_object_or_404(Fundraiser, pk=pk, active=True)
     amount_raw = request.POST.get("amount")
+
     try:
         amount_dec = Decimal(str(amount_raw))
     except Exception:
         return JsonResponse({"error": "Invalid amount"}, status=400)
+
     if amount_dec <= 0:
         return JsonResponse({"error": "Amount must be > 0"}, status=400)
 
@@ -58,22 +59,29 @@ def create_checkout_session(request, pk):
     except Exception as e:
         return JsonResponse({"error": "Stripe error: " + str(e)}, status=500)
 
-    # create pending donation record (status pending)
-    donation = Donation.objects.create(
-        fundraiser=fundraiser,
-        user=request.user if request.user.is_authenticated else None,
-        amount=amount_dec,
-        currency="INR",
-        payment_method=Donation.PAYMENT_EXTERNAL,
-        status=Donation.STATUS_PENDING,
-        stripe_session_id=session.id
-    )
+    # create donation record (mark as succeeded immediately)
+    with transaction.atomic():
+        donation = Donation.objects.create(
+            fundraiser=fundraiser,
+            user=request.user if request.user.is_authenticated else None,
+            amount=amount_dec,
+            currency="INR",
+            payment_method=Donation.PAYMENT_EXTERNAL,
+            status=Donation.STATUS_SUCCEEDED,  # directly mark succeeded
+            stripe_session_id=session.id
+        )
+
+        # immediately update fundraiser totals
+        fundraiser.raised = (fundraiser.raised or Decimal("0.00")) + amount_dec
+        fundraiser.donors_count = (fundraiser.donors_count or 0) + 1
+        fundraiser.save(update_fields=["raised", "donors_count"])
 
     return JsonResponse({
         "ok": True,
         "sessionId": session.id,
         "publishableKey": settings.STRIPE_PUBLISHABLE_KEY
     })
+
 
 
 
