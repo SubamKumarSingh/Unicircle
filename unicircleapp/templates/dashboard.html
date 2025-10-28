@@ -184,6 +184,8 @@ document.getElementById('generate-ai').addEventListener('click', async () => {
         </div>
       </div>
     </div>
+
+    {% if user.is_approved %}
     <aside id="fundraisersSidebar"
        class="fundraisers-sidebar"
        style="position: sticky; top: 15vh; width: 22vw; max-height: 80vh; height:fit-content;
@@ -238,7 +240,7 @@ document.getElementById('generate-ai').addEventListener('click', async () => {
   {% endif %}
 </div>
 </aside>
-
+{ % endif %}
 <script>
 
 // Fetch pending follow requests
