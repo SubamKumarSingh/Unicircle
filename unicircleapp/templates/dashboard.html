@@ -200,20 +200,45 @@ document.getElementById('generate-ai').addEventListener('click', async () => {
   <div id="fundraiserList" style="display:flex; flex-direction:column; gap:10px; transition: all 0.6s ease;">
     {% for f in fundraisers %}
       {% if f.active %}
-      <a href="{% url 'fundraisers:allfundraiserspage' %}" class="fundraiser-item" 
-         style="display:flex; align-items:center; gap:10px; padding:10px; background:#fafafa;
-                border-radius:12px; border:1px solid #eee; text-decoration:none; color:#333;">
-        <img src="{% if f.image %}{{ f.image.url }}{% else %}{% static 'images/default_fund.png' %}{% endif %}" 
-             alt="{{ f.title }}" 
-             style="width:48px; height:48px; object-fit:cover; border-radius:8px;">
-        <div style="flex:1;">
-          <div style="font-weight:500;">{{ f.title|truncatechars:25 }}</div>
-          <small style="color:#888;">₹{{ f.raised|default:0 }} / ₹{{ f.goal }}</small>
-          <div style="height:5px; border-radius:3px; background:#eee; overflow:hidden; margin-top:4px;">
+      <a href="{% url 'fundraisers:allfundraiserspage' %}" 
+   class="fundraiser-item" 
+   style="display:flex; align-items:center; gap:10px; padding:10px; background:#fafafa;
+          border-radius:12px; border:1px solid #eee; text-decoration:none; color:#333;">
+  
+  <img src="{% if f.image %}{{ f.image.url }}{% else %}{% static 'images/default_fund.png' %}{% endif %}" 
+       alt="{{ f.title }}" 
+       style="width:48px; height:48px; object-fit:cover; border-radius:8px;">
+  
+  <div style="flex:1;">
+    <div style="font-weight:500;">{{ f.title|truncatechars:25 }}</div>
+    <small style="color:#888;">₹{{ f.raised|default:0 }} / ₹{{ f.goal }}</small>
 
-          </div>
-        </div>
-      </a>
+    <!-- Store values as data attributes -->
+    <div class="progress-bar-container"
+         data-raised="{{ f.raised|default:0 }}"
+         data-goal="{{ f.goal|default:1 }}"
+         style="height:5px; border-radius:3px; background:#eee; overflow:hidden; margin-top:4px;">
+      <div class="progress-bar"
+           style="height:100%; width:0%; background:linear-gradient(90deg,#ff7043,#f4511e);
+                  transition:width 0.6s ease;"></div>
+    </div>
+  </div>
+</a>
+
+<script>
+  // Run once the page is loaded
+  document.addEventListener("DOMContentLoaded", () => {
+    const bars = document.querySelectorAll('.progress-bar-container');
+    bars.forEach(container => {
+      const raised = parseFloat(container.dataset.raised || 0);
+      const goal = parseFloat(container.dataset.goal || 1);
+      const percent = Math.min((raised / goal) * 100, 100); // cap at 100%
+      const bar = container.querySelector('.progress-bar');
+      setTimeout(() => { bar.style.width = percent + '%'; }, 200);
+    });
+  });
+</script>
+
       {% endif %}
     {% endfor %}
   </div>
