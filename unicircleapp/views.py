@@ -475,6 +475,13 @@ def delete_account(request):
         return JsonResponse({"success": True, "message": "Deleted", "redirect_url": "/"})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+    
+def delete_account(request):
+    if request.method == "POST":
+        user = request.user
+        logout(request)
+        user.delete()
+    return redirect("unicircleapp:landingpage")
 
 @csrf_exempt
 def logoutUser(request):
