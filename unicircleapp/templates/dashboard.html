@@ -210,11 +210,7 @@ document.getElementById('generate-ai').addEventListener('click', async () => {
           <div style="font-weight:500;">{{ f.title|truncatechars:25 }}</div>
           <small style="color:#888;">₹{{ f.raised|default:0 }} / ₹{{ f.goal }}</small>
           <div style="height:5px; border-radius:3px; background:#eee; overflow:hidden; margin-top:4px;">
-            <div style="background:linear-gradient(90deg,#ff7043,#f4511e); 
-            transition:width 0.4s;height:5px; 
-            /* width:{% widthratio f.raised f.goal 100 %}%;  */
-                        ">
-            </div>
+
           </div>
         </div>
       </a>

@@ -56,9 +56,9 @@
     <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
     <!-- <li><a class="dropdown-item" href="/account/delete-account/">Delete Account</a></li> -->
     <li>
-  <button id="deleteAccountBtn" type="button" class="dropdown-item text-danger">
+  <a id="deleteAccountBtn" href="{% url 'unicircleapp:delete_account' %}" class="dropdown-item text-danger">
     Delete account
-  </button>
+  </a>
 </li>
     <li><a class="dropdown-item" href="{% url 'unicircleapp:logoutpage' %}">Logout</a></li>
   </ul>
