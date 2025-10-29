@@ -701,8 +701,7 @@ def admin_fundraiser_list(request):
 
 # -- Admin delete (hard delete) --
 @session_admin_required
-@require_POST
-def admin_fundraiser_delete(request, pk):
+def admin_fundraiser_delete(request,pk):
     """
     Permanently delete a fundraiser and (optionally) its donations.
     Returns JSON: { ok: True } on success or appropriate error. Protected by POST + staff.
@@ -721,7 +720,6 @@ def admin_fundraiser_delete(request, pk):
 
 # -- Admin mark completed --
 @session_admin_required
-@require_POST
 def admin_fundraiser_mark_completed(request, pk):
     """
     Mark a fundraiser completed (and deactivate).
