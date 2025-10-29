@@ -56,6 +56,13 @@ urlpatterns = [
     path("<str:uname>/",views.user_view_profile,name = "user_view_profile_page"),
 
 
+    # ADMIN FUNDRAISERS VIEWS
+    path("admin/fundraisers/", views.admin_fundraiser_list, name="admin_fundraiser_list"),
+    path("admin/fundraisers/<int:pk>/delete/", views.admin_fundraiser_delete, name="admin_fundraiser_delete"),
+    path("admin/fundraisers/<int:pk>/complete/", views.admin_fundraiser_mark_completed, name="admin_fundraiser_complete"),
+    path("admin/fundraisers/<int:pk>/reopen/", views.admin_fundraiser_reopen, name="admin_fundraiser_reopen"),
+
+
 
 
 

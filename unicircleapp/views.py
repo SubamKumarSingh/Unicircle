@@ -1,3 +1,5 @@
+from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -27,7 +29,7 @@ from allauth.socialaccount.providers.oauth2.views import OAuth2LoginView
 from django.db import transaction
 
 # from chat.models import Follow
-from fundraisers.models import Fundraiser
+from fundraisers.models import Donation, Fundraiser
 from post.forms import CommentForm, PostForm
 from post.models import Post
 from unicircleapp.decorators import session_admin_required
@@ -668,6 +670,98 @@ def admin_view_posts(request):
 
 
 
+@session_admin_required
+def admin_fundraiser_list(request):
+    """
+    Admin list: paginated view of all fundraisers, optional ?q= search on title/desc.
+    Renders: fundraisers/admin/list.html (create a template as needed).
+    """
+    q = (request.GET.get("q") or "").strip()
+    fundraisers = Fundraiser.objects.all().order_by("-created_at")
+    if q:
+        fundraisers = fundraisers.filter(
+            # simple search, adjust/look into icontains across fields
+            title__icontains=q
+        ) | fundraisers.filter(description__icontains=q)
+
+    paginator = Paginator(fundraisers, 25)
+    page = request.GET.get("page")
+    page_obj = paginator.get_page(page)
+
+    context = {
+        "fundraisers": page_obj,
+        "q": q,
+    }
+    return render(request, "admin_panel/view_fundraisers.html", context)
+
+
+# -- Admin detail view --
+
+
+
+# -- Admin delete (hard delete) --
+@session_admin_required
+@require_POST
+def admin_fundraiser_delete(request, pk):
+    """
+    Permanently delete a fundraiser and (optionally) its donations.
+    Returns JSON: { ok: True } on success or appropriate error. Protected by POST + staff.
+    """
+    fundraiser = get_object_or_404(Fundraiser, pk=pk)
+    try:
+        with transaction.atomic():
+            # If you want to keep donation history, remove the next line and adjust behavior
+            Donation.objects.filter(fundraiser=fundraiser).delete()
+            fundraiser.delete()
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": "delete_failed", "detail": str(e)}, status=500)
+
+    return JsonResponse({"ok": True, "action": "deleted", "pk": pk})
+
+
+# -- Admin mark completed --
+@session_admin_required
+@require_POST
+def admin_fundraiser_mark_completed(request, pk):
+    """
+    Mark a fundraiser completed (and deactivate).
+    Returns JSON.
+    """
+    fundraiser = get_object_or_404(Fundraiser, pk=pk)
+    if fundraiser.completed:
+        return JsonResponse({"ok": False, "error": "already_completed"}, status=400)
+
+    try:
+        fundraiser.completed = True
+        fundraiser.active = False
+        fundraiser.save(update_fields=["completed", "active", "updated_at"])
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": "save_failed", "detail": str(e)}, status=500)
+
+    return JsonResponse({"ok": True, "action": "completed", "pk": pk})
+
+
+# -- Admin reopen (reactivate) --
+@session_admin_required
+@require_POST
+def admin_fundraiser_reopen(request, pk):
+    """
+    Reopen / reactivate a fundraiser (clears completed flag).
+    Returns JSON.
+    """
+    fundraiser = get_object_or_404(Fundraiser, pk=pk)
+    if fundraiser.active and not fundraiser.completed:
+        return JsonResponse({"ok": False, "error": "already_active"}, status=400)
+
+    try:
+        fundraiser.completed = False
+        fundraiser.active = True
+        fundraiser.save(update_fields=["completed", "active", "updated_at"])
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": "save_failed", "detail": str(e)}, status=500)
+
+    return JsonResponse({"ok": True, "action": "reopened", "pk": pk})
+
 
 def view_fundraisers(request):
     return render(request,'fundraisers.html')
@@ -841,3 +935,6 @@ def forgot_password(request):
         return JsonResponse({"success": True, "message": "A new password has been sent to your email. You will be logged out"})
 
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
